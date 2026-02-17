@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "782527340670",
+    "project_id": "lottery-4f9cd",
+    "storage_bucket": "lottery-4f9cd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782527340670:android:78278af5cc1db224bf782f",
+        "android_client_info": {
+          "package_name": "com.luckyraja.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "782527340670-kkfoo4h6dcr6phrnm3uqvnqad0lr3vi8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luckyraja.app",
+            "certificate_hash": "3141c04ac36c45b5ead298ba1d7e45dca7b79edc"
+          }
+        },
+        {
+          "client_id": "782527340670-t8bnoa59oj5ell1hpr3rgaj9bfunvpqv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luckyraja.app",
+            "certificate_hash": "89d19ad319bde855804e5f3a9999f3615c5e9515"
+          }
+        },
+        {
+          "client_id": "782527340670-ormbjkukv6a5qa2hia61mlijdspa1ojr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBv6DdAX0ov2e3rni4_dRPL3mPZQZi9XS0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "782527340670-ormbjkukv6a5qa2hia61mlijdspa1ojr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
