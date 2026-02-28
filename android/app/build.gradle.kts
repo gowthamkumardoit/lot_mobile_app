@@ -37,16 +37,21 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+            val storeFilePath = keystoreProperties["storeFile"] as? String
+
+            if (!storeFilePath.isNullOrEmpty()) {
+                storeFile = file(storeFilePath)
+                keyAlias = keystoreProperties["keyAlias"] as? String
+                keyPassword = keystoreProperties["keyPassword"] as? String
+                storePassword = keystoreProperties["storePassword"] as? String
+            }
         }
     }
 
+
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release") // ✅ FIXED
+            signingConfig = signingConfigs.getByName("debug") // ✅ FIXED
             isMinifyEnabled = false
             isShrinkResources = false
         }
