@@ -15,41 +15,84 @@ class NumberInputRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              maxLength: digits,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                letterSpacing: 4,
-                fontWeight: FontWeight.bold,
+    return Row(
+      children: [
+        /// 🔢 NUMBER FIELD
+        Expanded(
+          child: TextField(
+            controller: controller,
+            maxLength: digits,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
+            style: const TextStyle(
+              color: Color(0xFF2A2A2A),
+              fontSize: 18,
+              letterSpacing: 6,
+              fontWeight: FontWeight.w700,
+            ),
+
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: List.filled(digits, "0").join(),
+              hintStyle: const TextStyle(
+                color: Color(0xFFB0B0B0),
+                letterSpacing: 6,
               ),
-              decoration: InputDecoration(
-                counterText: '',
-                hintText: List.filled(digits, "0").join(), // ✅ FIX
-                hintStyle: const TextStyle(color: Colors.white38),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.cyanAccent),
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.cyanAccent),
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                ),
+
+              filled: true,
+              fillColor: const Color(0xFFFFF1E6),
+
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: 16,
               ),
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Color(0xFFFF6A00),
+                  width: 1.2,
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Color(0xFFFF6A00),
+                  width: 1.6,
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(onPressed: onAdd, child: const Text("ADD")),
-        ],
-      ),
+        ),
+
+        const SizedBox(width: 12),
+
+        /// ➕ ADD BUTTON
+        SizedBox(
+          height: 48,
+          child: ElevatedButton(
+            onPressed: onAdd,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6A00),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              "Add",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

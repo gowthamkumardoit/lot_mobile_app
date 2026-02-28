@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/screens/support/my_support_tickets_page.dart';
+import 'package:flutter/services.dart';
 
 class SupportPage extends StatefulWidget {
   const SupportPage({super.key});
@@ -65,146 +66,116 @@ class _SupportPageState extends State<SupportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       return const Scaffold(body: Center(child: Text("Please login again")));
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F2A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F2A),
-        elevation: 0,
-        title: const Text(
-          "Support & Help",
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android
+        statusBarBrightness: Brightness.light, // iOS
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// HEADER
-            const Text(
-              "Need Help?",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Support & Help"),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          foregroundColor: Colors.black,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Need Help?", style: theme.textTheme.headlineMedium),
+              const SizedBox(height: 6),
+              Text(
+                "Submit an issue or track your previous requests.",
+                style: theme.textTheme.bodyMedium,
               ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              "Submit an issue or track your previous requests.",
-              style: TextStyle(color: Colors.white70),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-            /// CATEGORY
-            const Text("Category", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 6),
+              /// CATEGORY
+              Text("Category", style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 8),
 
-            DropdownButtonFormField<String>(
-              value: _category,
-              dropdownColor: const Color(0xFF151A3A), // 🔑 dropdown list bg
-              iconEnabledColor: Colors.cyanAccent,
-              style: const TextStyle(color: Colors.white),
+              DropdownButtonFormField<String>(
+                value: _category,
+                decoration: const InputDecoration(),
+                items: categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _category = v!),
+              ),
 
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.08),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.white24),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.cyanAccent),
+              const SizedBox(height: 20),
+
+              /// MESSAGE
+              Text("Message", style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 8),
+
+              TextField(
+                controller: _messageCtrl,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  hintText: "Describe your issue clearly...",
                 ),
               ),
 
-              items: categories
-                  .map(
-                    (c) => DropdownMenuItem<String>(
-                      value: c,
-                      child: Text(
-                        c,
-                        style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 28),
+
+              /// SUBMIT
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("SUBMIT REQUEST"),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              /// VIEW TICKETS
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MySupportTicketsPage(),
                       ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: theme.colorScheme.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  )
-                  .toList(),
-
-              onChanged: (v) => setState(() => _category = v!),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// MESSAGE
-            const Text("Message", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _messageCtrl,
-              maxLines: 5,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: "Describe your issue clearly...",
-                hintStyle: TextStyle(color: Colors.white38),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            /// SUBMIT
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const CircularProgressIndicator()
-                    : const Text("SUBMIT REQUEST"),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            /// MY TICKETS
-            const SizedBox(height: 32),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MySupportTicketsPage(),
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.cyanAccent),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  "VIEW MY SUPPORT TICKETS",
-                  style: TextStyle(color: Colors.cyanAccent),
+                  ),
+                  child: Text(
+                    "VIEW MY SUPPORT TICKETS",
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

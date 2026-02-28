@@ -11,6 +11,15 @@ import 'package:mobile_app/modals/wallet_txn.dart';
 import 'package:mobile_app/modals/topup_request.dart';
 import 'package:mobile_app/screens/wallet/topup_bottom_sheet.dart';
 import 'package:mobile_app/screens/wallet/withdraw/withdraw_bottom_sheet.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+const walletBg = Color(0xFF0B1220);
+const walletSurface = Color(0xFF11172C);
+const walletCardDark = Color(0xFF141B34);
+const walletAccent = Color(0xFF3B6CFF);
+const walletAccent2 = Color(0xFF00E5FF);
+const walletCredit = Color(0xFF2EFF7A);
+const walletDebit = Color(0xFFFF5C5C);
 
 bool isWithdrawBlocked({
   required PlatformConfig config,
@@ -28,23 +37,32 @@ bool isWithdrawBlocked({
   return false;
 }
 
-class WalletPage extends StatelessWidget {
+class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
 
+  @override
+  State<WalletPage> createState() => _WalletPageState();
+}
+
+class _WalletPageState extends State<WalletPage> {
+  Key _refreshKey = UniqueKey();
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _refreshKey = UniqueKey(); // rebuild everything
+    });
+
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
   // THEME
-  static const bg = Color(0xFF0B1220);
-  static const surface = Color(0xFF11172C);
-  static const cardDark = Color(0xFF141B34);
-  static const accent = Color(0xFF3B6CFF);
-  static const accent2 = Color(0xFF00E5FF);
-  static const credit = Color(0xFF2EFF7A);
-  static const debit = Color(0xFFFF5C5C);
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return const Scaffold(
-        backgroundColor: bg,
+        backgroundColor: walletBg,
         body: Center(
           child: Text(
             "Please login to view wallet",
@@ -57,12 +75,15 @@ class WalletPage extends StatelessWidget {
     final userId = user.uid;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: walletBg,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          color: walletAccent2,
+          onRefresh: _handleRefresh,
+          child: ListView(
+            key: _refreshKey,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 40),
             children: [
               // HEADER
               Padding(
@@ -133,11 +154,11 @@ class WalletPage extends StatelessWidget {
                       final kycApproved = kycSnap.data ?? false;
 
                       return StreamBuilder<WalletBalance>(
-                        stream: WalletService().getWalletBalanceStream(userId),
+                        stream: WalletService().getWalletBalances(userId),
                         builder: (context, balanceSnap) {
                           final balance =
                               balanceSnap.data ??
-                              WalletBalance(wallet: 0, locked: 0);
+                              WalletBalance(wallet: 0, locked: 0, bonus: 0);
 
                           final blocked = isWithdrawBlocked(
                             config: config,
@@ -293,7 +314,7 @@ class WalletPage extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: surface,
+                  color: walletSurface,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: StreamBuilder<List<WalletTxn>>(
@@ -323,7 +344,7 @@ class WalletPage extends StatelessWidget {
                                 width: 10,
                                 height: 10,
                                 decoration: BoxDecoration(
-                                  color: isCredit ? credit : debit,
+                                  color: isCredit ? walletCredit : walletDebit,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -352,7 +373,7 @@ class WalletPage extends StatelessWidget {
                               Text(
                                 "${isCredit ? '+' : '-'}₹${t.amount.abs()}",
                                 style: TextStyle(
-                                  color: isCredit ? credit : debit,
+                                  color: isCredit ? walletCredit : walletDebit,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -383,7 +404,7 @@ class WalletPage extends StatelessWidget {
                     child: const Text(
                       "View Full History",
                       style: TextStyle(
-                        color: accent2,
+                        color: walletAccent2,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -400,10 +421,9 @@ class WalletPage extends StatelessWidget {
 
 class _WalletHeroCard extends StatelessWidget {
   final WalletBalance balance;
-
   final bool withdrawBlocked;
   final PlatformConfig config;
-  final bool kycApproved; // ✅ ADD
+  final bool kycApproved;
 
   const _WalletHeroCard({
     required this.balance,
@@ -414,88 +434,229 @@ class _WalletHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          colors: [WalletPage.accent, WalletPage.accent2],
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [walletAccent, walletAccent2],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const Text(
-            "Available Balance",
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "₹ ${balance.available}",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 38,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-
-          if (balance.locked > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              "₹${balance.locked} locked in pending withdrawal",
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
-
-          if (withdrawBlocked) ...[
-            const SizedBox(height: 12),
-            _WithdrawBlockedBanner(config: config),
-          ],
-
-          const SizedBox(height: 22),
-
-          Row(
-            children: [
-              Expanded(
-                child: _ActionPill(
-                  icon: Icons.add,
-                  label: "Top Up",
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const TopUpBottomSheet(),
-                    );
-                  },
+          /// ₹ WATERMARK
+          Positioned(
+            right: -10,
+            bottom: -30,
+            child: Opacity(
+              opacity: 0.08,
+              child: Text(
+                "₹",
+                style: TextStyle(
+                  fontSize: 200,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ActionPill(
-                  icon: Icons.arrow_upward,
-                  label: "Withdraw",
-                  onTap: withdrawBlocked
-                      ? () => _showWithdrawBlocked(context, config)
-                      : () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => WithdrawBottomSheet(
-                              config: config,
-                              kycApproved: kycApproved,
-                            ),
-                          );
-                        },
+            ),
+          ),
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Available Balance",
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "₹ ${balance.available}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w900,
                 ),
+              ),
+
+              if (balance.locked > 0) ...[
+                const SizedBox(height: 6),
+                Text(
+                  "₹${balance.locked} locked in pending withdrawal",
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+
+              /// 🎁 BONUS STREAM SECTION
+              const SizedBox(height: 16),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .collection('bonuses')
+                    .where('status', isEqualTo: 'ACTIVE')
+                    .snapshots(),
+                builder: (context, snap) {
+                  if (!snap.hasData || snap.data!.docs.isEmpty) {
+                    return const SizedBox();
+                  }
+
+                  final docs = snap.data!.docs;
+
+                  int totalBonus = 0;
+                  DateTime? earliestExpiry;
+
+                  for (final doc in docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+
+                    final remaining = (data['remaining'] ?? 0) as num;
+                    final expiresAt = (data['expiresAt'] as Timestamp?)
+                        ?.toDate();
+
+                    totalBonus += remaining.toInt();
+
+                    if (expiresAt != null) {
+                      if (earliestExpiry == null ||
+                          expiresAt.isBefore(earliestExpiry)) {
+                        earliestExpiry = expiresAt;
+                      }
+                    }
+                  }
+
+                  if (totalBonus <= 0) return const SizedBox();
+
+                  final expiryText = _formatExpiry(earliestExpiry);
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.card_giftcard,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+
+                        /// Bonus + Countdown
+                        Expanded(
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
+                            children: [
+                              Text(
+                                "Bonus ₹$totalBonus",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+
+                              if (earliestExpiry != null) ...[
+                                const Text(
+                                  "•",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                BonusCountdown(expiry: earliestExpiry),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              if (withdrawBlocked) ...[
+                const SizedBox(height: 14),
+                _WithdrawBlockedBanner(config: config),
+              ],
+
+              const SizedBox(height: 22),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionPill(
+                      icon: Icons.add,
+                      label: "Top Up",
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const TopUpBottomSheet(),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionPill(
+                      icon: Icons.arrow_upward,
+                      label: "Withdraw",
+                      onTap: withdrawBlocked
+                          ? () => _showWithdrawBlocked(context, config)
+                          : () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => WithdrawBottomSheet(
+                                  config: config,
+                                  kycApproved: kycApproved,
+                                ),
+                              );
+                            },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String? _formatExpiry(DateTime? expiry) {
+    if (expiry == null) return null;
+
+    final diff = expiry.difference(DateTime.now());
+
+    if (diff.isNegative) return "Expired";
+
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+
+    if (days > 0) {
+      return "Expires in ${days}d ${hours}h";
+    } else {
+      return "Expires in ${diff.inHours}h";
+    }
   }
 }
 
@@ -526,6 +687,79 @@ void _showWithdrawBlocked(BuildContext context, PlatformConfig config) {
       );
     },
   );
+}
+
+class BonusCountdown extends StatefulWidget {
+  final DateTime expiry;
+
+  const BonusCountdown({super.key, required this.expiry});
+
+  @override
+  State<BonusCountdown> createState() => _BonusCountdownState();
+}
+
+class _BonusCountdownState extends State<BonusCountdown> {
+  late Duration remaining;
+
+  @override
+  void initState() {
+    super.initState();
+    remaining = widget.expiry.difference(DateTime.now());
+    _startTicker();
+  }
+
+  void _startTicker() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+
+      setState(() {
+        remaining = widget.expiry.difference(DateTime.now());
+      });
+
+      return !remaining.isNegative;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (remaining.isNegative) {
+      return const Text(
+        "Expired",
+        style: TextStyle(
+          color: Color.fromARGB(255, 255, 254, 254),
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      );
+    }
+
+    final days = remaining.inDays;
+    final hours = remaining.inHours % 24;
+    final minutes = remaining.inMinutes % 60;
+    final seconds = remaining.inSeconds % 60;
+
+    String text;
+
+    if (days > 0) {
+      text = "Expires in ${days}d ${hours}h ${minutes}m";
+    } else {
+      text =
+          " Expires in  ${hours.toString().padLeft(2, '0')}:"
+          "${minutes.toString().padLeft(2, '0')}:"
+          "${seconds.toString().padLeft(2, '0')}";
+    }
+
+    return Text(
+      text,
+      style: TextStyle(
+        color: days == 0 ? Colors.redAccent : Colors.orangeAccent,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
 }
 
 class _WithdrawBlockedBanner extends StatelessWidget {

@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_app/screens/app_shell.dart';
 import 'package:mobile_app/screens/auth/login_screen.dart';
 
-import '../home/home_page.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});

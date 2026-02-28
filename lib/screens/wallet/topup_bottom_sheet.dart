@@ -9,6 +9,14 @@ import 'package:mobile_app/screens/wallet/wallet_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 
+const walletBg = Color(0xFF0B1220);
+const walletSurface = Color(0xFF11172C);
+const walletCardDark = Color(0xFF141B34);
+const walletAccent = Color(0xFF3B6CFF);
+const walletAccent2 = Color(0xFF00E5FF);
+const walletCredit = Color(0xFF2EFF7A);
+const walletDebit = Color(0xFFFF5C5C);
+
 class TopUpBottomSheet extends StatefulWidget {
   const TopUpBottomSheet({super.key});
 
@@ -145,7 +153,7 @@ class _TopUpBottomSheetState extends State<TopUpBottomSheet> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
         decoration: const BoxDecoration(
-          color: WalletPage.surface,
+          color: walletSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
         ),
         child: SingleChildScrollView(
@@ -265,7 +273,7 @@ class _TopUpBottomSheetState extends State<TopUpBottomSheet> {
                               name: "Lottery Wallet",
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: WalletPage.accent,
+                              backgroundColor: walletAccent,
                               foregroundColor: Colors.black,
                             ),
                             child: const Text("Pay via UPI"),
@@ -311,7 +319,7 @@ class _TopUpBottomSheetState extends State<TopUpBottomSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? WalletPage.accent : Colors.white.withOpacity(0.08),
+            color: active ? walletAccent : Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Center(
@@ -369,7 +377,7 @@ class _TopUpBottomSheetState extends State<TopUpBottomSheet> {
         children: [
           Icon(
             proofImage != null ? Icons.check : Icons.upload,
-            color: WalletPage.accent,
+            color: walletAccent ,
           ),
           const SizedBox(width: 10),
           Text(
@@ -388,7 +396,7 @@ class _TopUpBottomSheetState extends State<TopUpBottomSheet> {
     child: ElevatedButton(
       onPressed: uploading ? null : _submit,
       style: ElevatedButton.styleFrom(
-        backgroundColor: WalletPage.accent,
+        backgroundColor: walletAccent ,
         padding: const EdgeInsets.all(14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

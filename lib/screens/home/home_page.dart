@@ -1,58 +1,402 @@
 import 'package:flutter/material.dart';
-import '../../services/draw_run_service.dart';
-import '../../modals/draw_run.dart';
-import 'package:mobile_app/screens/home/lucky_draw_card.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app/modals/draw_run.dart';
+import 'package:mobile_app/screens/home/lucky_draw_card.dart';
+import 'package:mobile_app/services/draw_run_service.dart';
+import 'package:mobile_app/services/wallet_service.dart';
+import 'package:mobile_app/widgets/digit_slot_card.dart';
+import 'package:mobile_app/widgets/lottery_header.dart';
+import '../../services/digit_draw_slot_service.dart';
+import '../../modals/digit_draw_slot.dart';
+import '../../theme/app_gradients.dart';
+import 'package:intl/intl.dart';
+import '../../pages/ticket_purchase_page.dart';
+import '../../widgets/promotion_carousel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-Widget todayStatusBanner(List<DrawRun> draws) {
-  final openDraws = draws.where((d) => d.isOpen).toList();
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
-  // 🔥 HIDE BANNER IF NO OPEN DRAWS
-  if (openDraws.isEmpty) return const SizedBox.shrink();
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
-  // ⏳ pick nearest draw
-  openDraws.sort(
-    (a, b) => (a.drawDateTime ?? DateTime.now()).compareTo(
-      b.drawDateTime ?? DateTime.now(),
-    ),
-  );
+class _HomePageState extends State<HomePage> {
+  Key _refreshKey = UniqueKey();
 
-  final nextDraw = openDraws.first;
-  final dt = nextDraw.drawDateTime;
+  Future<void> _handleRefresh() async {
+    // Optional: clear caches if you use them
+    // DrawResultService.clearCache();
 
-  final remaining = dt == null ? null : dt.difference(DateTime.now());
+    // Force rebuild to re-trigger streams
+    setState(() {
+      _refreshKey = UniqueKey();
+    });
 
-  return Container(
-    margin: const EdgeInsets.fromLTRB(16, 6, 16, 14),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      gradient: LinearGradient(
-        colors: [
-          Colors.cyanAccent.withOpacity(0.25),
-          Colors.blueAccent.withOpacity(0.15),
-        ],
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final WalletService _walletService = WalletService();
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(body: Center(child: Text("User not logged in")));
+    }
+
+    final userId = user.uid; // now non-null String
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
-      border: Border.all(color: Colors.cyanAccent.withOpacity(0.6)),
-    ),
-    child: Row(
-      children: [
-        const PulseDot(),
-        const SizedBox(width: 8),
-        Text(
-          "${openDraws.length} Live draw${openDraws.length > 1 ? 's' : ''}",
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6FA), // 🔥 light theme bg
+        body: SafeArea(
+          child: StreamBuilder<List<DigitDrawSlot>>(
+            stream: DigitDrawSlotService().getOpenSlots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    snapshot.error.toString(),
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                );
+              }
+
+              // if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              //   return noDrawsAvailable(context);
+              // }
+
+              return DefaultTabController(
+                length: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+
+                    /// ✅ HEADER ALWAYS VISIBLE
+                    WalletHeaderWrapper(userId: userId),
+
+                    const SizedBox(height: 12),
+
+                    Expanded(
+                      child: NestedScrollView(
+                        key: _refreshKey,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                          const SliverToBoxAdapter(
+                            child: Column(
+                              children: [
+                                PromotionCarousel(height: 200),
+                                SizedBox(height: 16),
+                              ],
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    0,
+                                    47,
+                                    255,
+                                  ).withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Color.fromARGB(
+                                      255,
+                                      0,
+                                      47,
+                                      255,
+                                    ).withOpacity(0.4),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: const [
+                                    Icon(
+                                      Icons.card_giftcard,
+                                      size: 18,
+                                      color: Color.fromARGB(255, 0, 47, 255),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Bonus is applicable only for Kuber Gold draws",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color.fromARGB(
+                                            255,
+                                            0,
+                                            47,
+                                            255,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SliverPersistentHeader(
+                            pinned: true,
+                            delegate: _TabBarDelegate(
+                              TabBar(
+                                indicatorColor: Color(0xFFFF6A3D),
+                                indicatorWeight: 3,
+                                labelColor: Color(0xFF1E1E1E),
+                                unselectedLabelColor: Colors.grey,
+                                tabs: [
+                                  Tab(text: "Kuber Gold"),
+                                  Tab(text: "Kuber X"),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        body: TabBarView(
+                          children: [
+                            _GoldTab(), // Gold handles its own empty
+                            _KuberXTab(), // Kuber X handles its own empty
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
-        const Spacer(),
-        Text(
-          remaining == null ? "Live now 🎯" : formatDuration(remaining),
-          style: const TextStyle(color: Colors.white70),
-        ),
-      ],
-    ),
+      ),
+    );
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: const Color(0xFFF5F6FA),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: Alignment.centerLeft,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) => false;
+}
+
+class _GoldTab extends StatelessWidget {
+  const _GoldTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        // force rebuild
+        (context.findAncestorStateOfType<_HomePageState>())?.setState(() {});
+        await Future.delayed(const Duration(milliseconds: 600));
+      },
+      child: StreamBuilder<List<DigitDrawSlot>>(
+        stream: DigitDrawSlotService().getOpenSlots(),
+        builder: (context, snapshot) {
+          /// 🔄 Loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          /// ❌ Error
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Something went wrong",
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            );
+          }
+
+          /// 📦 Data
+          final slots = snapshot.data ?? [];
+
+          if (slots.isEmpty) {
+            return _emptyKuberGold();
+          }
+
+          /// 🔥 List
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+            itemCount: slots.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) {
+              return DigitSlotCard(
+                key: ValueKey(slots[i].id), // important for proper rebuild
+                slot: slots[i],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _KuberXTab extends StatelessWidget {
+  final DrawService _drawService = DrawService();
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        (context.findAncestorStateOfType<_HomePageState>())?.setState(() {});
+        await Future.delayed(const Duration(milliseconds: 600));
+      },
+      child: StreamBuilder<List<DrawRun>>(
+        stream: _drawService.getTodayDraws(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Something went wrong",
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            );
+          }
+
+          final draws = snapshot.data ?? [];
+
+          if (draws.isEmpty) {
+            return _emptyKuberX();
+          }
+
+          return ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 120),
+            itemCount: draws.length,
+            itemBuilder: (context, index) {
+              return LuckyDrawCard(draw: draws[index]);
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class WalletHeaderWrapper extends StatelessWidget {
+  final String userId;
+
+  const WalletHeaderWrapper({super.key, required this.userId});
+
+  Future<String?> _getAvatarUrl() async {
+    try {
+      final ref = FirebaseStorage.instance.ref().child(
+        'profile_photos/$userId/avatar',
+      );
+
+      return await ref.getDownloadURL();
+    } catch (e) {
+      return null; // if image doesn't exist
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _getAvatarUrl(),
+      builder: (context, avatarSnapshot) {
+        final avatarUrl = avatarSnapshot.data;
+
+        return StreamBuilder<int>(
+          stream: WalletService().getBalance(userId),
+          builder: (context, snapshot) {
+            final balance = snapshot.data ?? 0;
+
+            return LotteryHeader(
+              balance: "₹${NumberFormat('#,##,###').format(balance)}",
+              notificationCount: 0,
+              avatarUrl: avatarUrl, // ✅ pass image
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+Widget _buildCountdown(DateTime closeTime) {
+  return StreamBuilder<int>(
+    stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
+    builder: (context, snapshot) {
+      final now = DateTime.now();
+      final difference = closeTime.difference(now);
+
+      if (difference.isNegative) {
+        return const Text(
+          "Closed",
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        );
+      }
+
+      final hours = difference.inHours;
+      final minutes = difference.inMinutes % 60;
+      final seconds = difference.inSeconds % 60;
+
+      return Row(
+        children: [
+          const Icon(Icons.timer_outlined, size: 16, color: Colors.redAccent),
+          const SizedBox(width: 6),
+          Text(
+            "${hours.toString().padLeft(2, '0')}:"
+            "${minutes.toString().padLeft(2, '0')}:"
+            "${seconds.toString().padLeft(2, '0')}",
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: Colors.redAccent,
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 
@@ -72,185 +416,52 @@ String formatDuration(Duration d) {
   }
 }
 
-class PulseDot extends StatefulWidget {
-  const PulseDot({super.key});
-
-  @override
-  State<PulseDot> createState() => _PulseDotState();
-}
-
-class _PulseDotState extends State<PulseDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _controller,
-      child: const Icon(Icons.circle, color: Colors.greenAccent, size: 12),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent, // IMPORTANT
-        statusBarIconBrightness: Brightness.light, // Android icons
-        statusBarBrightness: Brightness.dark, // iOS icons
-      ),
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF070B22), Color(0xFF140C3D), Color(0xFF1F0F55)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-
-                /// 📜 DRAW CONTENT
-                Expanded(
-                  child: StreamBuilder<List<DrawRun>>(
-                    stream: DrawService().getTodayDraws(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.cyanAccent,
-                          ),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            snapshot.error.toString(),
-                            style: const TextStyle(color: Colors.redAccent),
-                          ),
-                        );
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return noDrawsAvailable();
-                      }
-
-                      final draws = snapshot.data!;
-                      final openDraws = draws.where((d) => d.isOpen).toList();
-
-                      String timeLeft = "Live now 🎯";
-                      if (openDraws.isNotEmpty &&
-                          openDraws.first.drawDateTime != null) {
-                        final remaining = openDraws.first.drawDateTime!
-                            .difference(DateTime.now());
-                        timeLeft = formatDuration(remaining);
-                      }
-
-                      return Column(
-                        children: [
-                          luckyRajaHeader(
-                            liveCount: openDraws.length,
-                            timeLeft: timeLeft,
-                          ),
-
-                          Expanded(
-                            child: RefreshIndicator(
-                              color: Colors.cyanAccent,
-                              onRefresh: () async {
-                                await Future.delayed(
-                                  const Duration(milliseconds: 400),
-                                );
-                              },
-                              child: ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  6,
-                                  16,
-                                  120,
-                                ),
-                                itemCount: draws.length,
-                                itemBuilder: (ctx, i) {
-                                  return LuckyDrawCard(draw: draws[i]);
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-Widget noDrawsAvailable() {
+Widget _emptyKuberGold() {
   return Center(
     child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.08),
-            Colors.white.withOpacity(0.03),
-          ],
-        ),
-        border: Border.all(color: Colors.white24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(
-            Icons.hourglass_empty_rounded,
-            size: 48,
-            color: Colors.cyanAccent,
-          ),
-          SizedBox(height: 12),
-          Text(
-            "No draws available right now",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFFF6A3D).withOpacity(0.12),
             ),
-            textAlign: TextAlign.center,
+            child: const Icon(
+              Icons.event_busy_outlined,
+              size: 32,
+              color: Color(0xFFFF6A3D),
+            ),
           ),
-          SizedBox(height: 6),
-          Text(
-            "New draws will appear here soon.\nCheck back in a while 🎯",
-            style: TextStyle(color: Colors.white70, fontSize: 13),
+          const SizedBox(height: 18),
+          const Text(
+            "No Kuber Gold Draws",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E1E1E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "New Kuber Gold draws will appear here.\nPlease check back shortly.",
             textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
           ),
         ],
       ),
@@ -258,92 +469,55 @@ Widget noDrawsAvailable() {
   );
 }
 
-Widget luckyRajaHeader({required int liveCount, required String timeLeft}) {
-  return Container(
-    margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(22),
-      gradient: const LinearGradient(
-        colors: [
-          Color(0xFF1A1F6B), // royal blue
-          Color(0xFF3A1C8C), // purple
+Widget _emptyKuberX() {
+  return Center(
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
         ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.35),
-          blurRadius: 24,
-          offset: const Offset(0, 10),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// 👑 APP NAME
-        Row(
-          children: [
-            Icon(
-              Icons.emoji_events, // 👑 crown replacement
-              color: Color(0xFFFFD700),
-              size: 26,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFFF6A3D).withOpacity(0.12),
             ),
-            const SizedBox(width: 8),
-            const Text(
-              "Lucky Raja",
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.6,
-              ),
+            child: const Icon(
+              Icons.event_busy_outlined,
+              size: 32,
+              color: Color(0xFFFF6A3D),
             ),
-          ],
-        ),
-
-        const SizedBox(height: 6),
-
-        /// ✨ TAGLINE
-        const Text(
-          "Try your luck in today’s live draws",
-          style: TextStyle(color: Colors.white70, fontSize: 14),
-        ),
-
-        const SizedBox(height: 14),
-
-        /// 🔴 LIVE STATUS BAR
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              colors: [
-                Colors.cyanAccent.withOpacity(0.25),
-                Colors.blueAccent.withOpacity(0.15),
-              ],
-            ),
-            border: Border.all(color: Colors.cyanAccent.withOpacity(0.6)),
           ),
-          child: Row(
-            children: [
-              const PulseDot(),
-              const SizedBox(width: 8),
-              Text(
-                "$liveCount Live draw${liveCount > 1 ? 's' : ''}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Text(timeLeft, style: const TextStyle(color: Colors.white70)),
-            ],
+          const SizedBox(height: 18),
+          const Text(
+            "No Kuber X Draws",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1E1E1E),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          const Text(
+            "New Kuber X draws will appear here.\nPlease check back shortly.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+          ),
+        ],
+      ),
     ),
   );
 }

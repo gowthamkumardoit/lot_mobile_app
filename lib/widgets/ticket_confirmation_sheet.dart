@@ -85,123 +85,125 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
     final height = MediaQuery.of(context).size.height;
 
     return SizedBox(
-      height: height * 0.65, // ⬅️ SAME SIZE AS BEFORE
+      height: height * 0.65,
       child: Stack(
         children: [
-          // 🎉 CONFETTI
+          /// 🎉 CONFETTI (warm colors)
           Align(
             alignment: Alignment.topCenter,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confetti,
-
-                // 🔑 CRITICAL FIXES
-                blastDirectionality:
-                    BlastDirectionality.explosive, // symmetric spread
-                blastDirection: -1, // MUST be -1 for explosive
-
-                emissionFrequency: 0.15,
-                numberOfParticles: 100,
-                gravity: 0.2,
-
-                // Size
-                minimumSize: const Size(6, 6),
-                maximumSize: const Size(12, 12),
-
-                // Colors
-                colors: const [
-                  Colors.cyanAccent,
-                  Colors.pinkAccent,
-                  Colors.amber,
-                  Colors.greenAccent,
-                  Colors.purpleAccent,
-                  Colors.white,
-                ],
-
-                shouldLoop: false,
-              ),
+            child: ConfettiWidget(
+              confettiController: _confetti,
+              blastDirectionality: BlastDirectionality.explosive,
+              blastDirection: -1,
+              emissionFrequency: 0.15,
+              numberOfParticles: 80,
+              gravity: 0.25,
+              minimumSize: const Size(6, 6),
+              maximumSize: const Size(12, 12),
+              colors: const [
+                Color(0xFFFF6A00),
+                Color(0xFFD4A017),
+                Color(0xFFFFC107),
+                Color(0xFFFF8C42),
+                Colors.white,
+              ],
+              shouldLoop: false,
             ),
           ),
 
-          // MAIN CONTENT
+          /// MAIN CONTENT
           Container(
             decoration: const BoxDecoration(
-              color: Color(0xFF0D1028),
+              color: Color(0xFFFFF8F2),
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
               children: [
-                // DRAG HANDLE
+                /// DRAG HANDLE
                 Container(
                   width: 40,
                   height: 4,
                   margin: const EdgeInsets.only(top: 12, bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: const Color(0xFFDDDDDD),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
 
-                // HEADER
+                /// HEADER
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: const Icon(Icons.close, color: Color(0xFF2A2A2A)),
                         onPressed: _isSubmitting ? null : widget.onCancel,
                       ),
                       const SizedBox(width: 8),
                       const Text(
                         "Confirm Ticket",
                         style: TextStyle(
-                          color: Colors.cyanAccent,
+                          color: Color(0xFF2A2A2A),
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
                 ),
 
+                const SizedBox(height: 4),
+
+                /// DRAW TITLE
                 Text(
                   widget.draw.title,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2A2A2A),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
+                const SizedBox(height: 4),
+
                 Text(
                   "${widget.config.type.name.toUpperCase()} • Win x${widget.config.multiplier}",
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: Color(0xFF777777)),
                 ),
 
                 const SizedBox(height: 16),
 
-                // LIST
+                /// NUMBER LIST
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     children: widget.numbers.entries.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFFE2D2)),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               e.key,
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2A2A2A),
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 2,
                               ),
                             ),
                             const Spacer(),
                             Text(
                               "₹${e.value}",
                               style: const TextStyle(
-                                color: Colors.cyanAccent,
-                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFF6A00),
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -211,29 +213,37 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
                   ),
                 ),
 
-                const Divider(color: Colors.white24),
+                const Divider(color: Color(0xFFFFE2D2), thickness: 1),
 
+                /// TOTAL
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       const Text(
                         "Total",
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: Color(0xFF777777),
+                          fontSize: 14,
+                        ),
                       ),
                       const Spacer(),
                       Text(
                         "₹${widget.total}",
                         style: const TextStyle(
-                          color: Colors.cyanAccent,
+                          color: Color(0xFFFF6A00),
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
                 ),
 
+                /// ACTION BUTTONS
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -243,23 +253,42 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
                   ),
                   child: Row(
                     children: [
+                      /// CANCEL
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _isSubmitting ? null : widget.onCancel,
-                          child: const Text("CANCEL"),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFFF6A00)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            "Cancel",
+                            style: TextStyle(color: Color(0xFFFF6A00)),
+                          ),
                         ),
                       ),
+
                       const SizedBox(width: 12),
+
+                      /// CONFIRM
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _handleConfirm,
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size.fromHeight(48),
-                            backgroundColor: Colors.white,
+                            backgroundColor: const Color(0xFFFF6A00),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: const Text(
-                            "CONFIRM",
-                            style: TextStyle(color: Colors.black),
+                            "Confirm",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -270,23 +299,23 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
             ),
           ),
 
-          // 🔥 LOADING OVERLAY (THIS IS THE KEY FIX)
+          /// LOADING OVERLAY
           if (_isSubmitting)
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withOpacity(0.4),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
               ),
               child: const Center(
                 child: SizedBox(
-                  height: 48,
-                  width: 48,
+                  height: 42,
+                  width: 42,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.cyanAccent,
+                      Color(0xFFFF6A00),
                     ),
                   ),
                 ),

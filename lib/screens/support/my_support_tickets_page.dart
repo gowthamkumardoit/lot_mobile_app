@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/services/support_service.dart';
+import 'package:flutter/services.dart';
 
 class MySupportTicketsPage extends StatefulWidget {
   const MySupportTicketsPage({super.key});
@@ -28,48 +29,51 @@ class _MySupportTicketsPageState extends State<MySupportTicketsPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     if (uid == null) {
       return const Scaffold(body: Center(child: Text("Please login again")));
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F2A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F2A),
-        elevation: 0,
-        iconTheme: const IconThemeData(
-          color: Colors.white, // 👈 makes back arrow visible
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android
+        statusBarBrightness: Brightness.light, // iOS
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text("My Support Tickets"),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          foregroundColor: Colors.black,
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: theme.colorScheme.primary,
+            labelColor: theme.colorScheme.primary,
+            unselectedLabelColor: Colors.black54,
+            tabs: const [
+              Tab(text: "OPEN"),
+              Tab(text: "CLOSED"),
+            ],
+          ),
         ),
-        title: const Text(
-          "My Support Tickets",
-          style: TextStyle(color: Colors.white),
-        ),
-        bottom: TabBar(
+        body: TabBarView(
           controller: _tabController,
-          indicatorColor: Colors.cyanAccent,
-          labelColor: Colors.cyanAccent,
-          unselectedLabelColor: Colors.white54,
-          tabs: const [
-            Tab(text: "OPEN"),
-            Tab(text: "CLOSED"),
+          children: [
+            _ticketsByStatus(uid, "OPEN"),
+            _ticketsByStatus(uid, "CLOSED"),
           ],
         ),
-      ),
-
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _ticketsByStatus(uid, "OPEN"),
-          _ticketsByStatus(uid, "CLOSED"),
-        ],
       ),
     );
   }
 
   /// 🔁 Tickets list by status
   Widget _ticketsByStatus(String uid, String status) {
+    final theme = Theme.of(context);
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection("supportTickets")
@@ -102,72 +106,80 @@ class _MySupportTicketsPageState extends State<MySupportTicketsPage>
             final message = data['message'] ?? "";
             final adminResponse = data['adminResponse'];
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // HEADER
-                  Row(
-                    children: [
-                      Text(
-                        category,
-                        style: const TextStyle(
-                          color: Colors.cyanAccent,
-                          fontWeight: FontWeight.bold,
+            return Card(
+              margin: const EdgeInsets.only(bottom: 14),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// HEADER
+                    Row(
+                      children: [
+                        Text(
+                          category,
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          color: status == "OPEN"
-                              ? Colors.orangeAccent
-                              : Colors.greenAccent,
-                          fontSize: 12,
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: status == "OPEN"
+                                ? Colors.orange.withOpacity(0.15)
+                                : Colors.green.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              color: status == "OPEN"
+                                  ? Colors.orange
+                                  : Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  const SizedBox(height: 8),
-
-                  // USER MESSAGE
-                  const Text(
-                    "Your message",
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(message, style: const TextStyle(color: Colors.white70)),
-
-                  // ADMIN RESPONSE (ONLY FOR CLOSED)
-                  if (status == "CLOSED" &&
-                      adminResponse != null &&
-                      adminResponse.toString().trim().isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    const Divider(color: Colors.white24),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Admin response",
-                      style: TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+
+                    /// USER MESSAGE
+                    Text(
+                      "Your message",
+                      style: theme.textTheme.bodyMedium!.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      adminResponse,
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                    Text(message, style: theme.textTheme.bodyMedium),
+
+                    /// ADMIN RESPONSE
+                    if (status == "CLOSED" &&
+                        adminResponse != null &&
+                        adminResponse.toString().trim().isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 10),
+                      Text(
+                        "Admin response",
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(adminResponse, style: theme.textTheme.bodyMedium),
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           },

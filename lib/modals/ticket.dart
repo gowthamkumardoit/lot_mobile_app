@@ -10,6 +10,8 @@ class Ticket {
   final int winAmount; // ✅ ADD THIS
   final String status; // PENDING / WON / LOST
   final DateTime createdAt;
+  final String slotId;
+  String? winningNumber;
 
   Ticket({
     required this.id,
@@ -21,27 +23,53 @@ class Ticket {
     required this.winAmount,
     required this.status,
     required this.createdAt,
+    required this.slotId,
+    this.winningNumber,
   });
 
   factory Ticket.fromDoc(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
 
     return Ticket(
-      id: d['id'] ?? doc.id,
+      id: doc.id,
       userId: d['userId'] ?? '',
       number: d['number']?.toString() ?? '--',
       type: d['type'] ?? '2D',
 
-      // 🔑 HANDLE BOTH OLD & NEW SCHEMA
       drawRunId: d['drawRunId'] ?? d['drawId'] ?? '',
+      slotId: d['slotId'] ?? '',
 
       status: d['status'] ?? 'PENDING',
-      amount: (d['amount'] ?? 0).toInt(),
-      winAmount: (d['winAmount'] ?? 0).toInt(),
+
+      amount: (d['amount'] ?? 0) is int
+          ? d['amount']
+          : (d['amount'] ?? 0).toInt(),
+
+      winAmount: (d['winAmount'] ?? 0) is int
+          ? d['winAmount']
+          : (d['winAmount'] ?? 0).toInt(),
 
       createdAt:
           (d['createdAt'] as Timestamp?)?.toDate() ??
           DateTime.fromMillisecondsSinceEpoch(0),
+
+      // 🔥 CRITICAL FIX
+      winningNumber: d['winningNumber']?.toString(),
+    );
+  }
+  Ticket copyWith({String? winningNumber}) {
+    return Ticket(
+      id: id,
+      userId: userId,
+      drawRunId: drawRunId,
+      slotId: slotId,
+      type: type,
+      number: number,
+      amount: amount,
+      winAmount: winAmount,
+      status: status,
+      createdAt: createdAt,
+      winningNumber: winningNumber ?? this.winningNumber,
     );
   }
 }

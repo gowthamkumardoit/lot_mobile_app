@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mobile_app/modals/draw_run.dart';
 import 'package:mobile_app/screens/tickets/ticket_select_page.dart';
+import 'package:mobile_app/widgets/night_sky.dart';
 
 class LuckyDrawCard extends StatefulWidget {
   final DrawRun draw;
@@ -132,190 +133,322 @@ class _LuckyDrawCardState extends State<LuckyDrawCard>
 
     final draw = widget.draw;
     final isCompleted = draw.isCompleted;
-    final isLocked = draw.isLocked;
     final isOpen = draw.isOpen && !isCompleted;
 
-    final statusText = draw.isCompleted
-        ? "DRAWN"
-        : isLocked
-        ? "LOCKED"
-        : "OPEN";
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: NightSky()),
 
-    final statusColor = draw.isCompleted
-        ? Colors.greenAccent
-        : isLocked
-        ? Colors.orangeAccent
-        : Colors.cyanAccent;
-
-    return Stack(
-      children: [
-        AnimatedBuilder(
-          animation: _glowAnim,
-          builder: (context, _) {
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          /// SOFT OUTER GLOW BEHIND CARD
+          Positioned.fill(
+            child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(26),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4F3BFF), Color(0xFF25196F)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                borderRadius: BorderRadius.circular(32),
                 boxShadow: [
                   BoxShadow(
-                    color: isOpen
-                        ? Colors.cyanAccent.withOpacity(_glowAnim.value)
-                        : statusColor.withOpacity(0.35),
-                    blurRadius: isOpen ? 30 : 20,
-                    spreadRadius: isOpen ? 2 : 0,
-                    offset: const Offset(0, 12),
+                    color: const Color.fromARGB(
+                      255,
+                      249,
+                      249,
+                      250,
+                    ).withOpacity(0.35),
+                    blurRadius: 80,
+                    spreadRadius: 10,
                   ),
                 ],
               ),
+            ),
+          ),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// 🟣 HEADER
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          draw.title.isNotEmpty ? draw.title : "Lucky Draw",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.4,
-                          ),
+          /// MAIN CARD
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0E1432), Color(0xFF131C46)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: const Color(0xFFFFD76A).withOpacity(0.25),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// HEADER
+                Row(
+                  children: [
+                    const Icon(Icons.star, color: Color(0xFFFFD76A), size: 22),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        draw.title.isNotEmpty ? draw.title : "Night Special",
+                        style: const TextStyle(
+                          color: Color(0xFFFFE6A3),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      _statusBadge(statusText, statusColor),
-                    ],
-                  ),
+                    ),
 
-                  const SizedBox(height: 10),
-                  _divider(),
-
-                  const SizedBox(height: 14),
-
-                  /// 🎰 PRIZE TIERS
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _slotBoxNeon(
-                        icon: "🎲",
-                        title: "2D",
-                        value: "x${draw.multiplier2D}",
-                        color: Colors.cyanAccent,
-                      ),
-                      _slotBoxNeon(
-                        icon: "🎰",
-                        title: "3D",
-                        value: "x${draw.multiplier3D}",
-                        color: Colors.purpleAccent,
-                      ),
-                      _slotBoxNeon(
-                        icon: "💎",
-                        title: "4D",
-                        value: "x${draw.multiplier4D}",
-                        color: Colors.amberAccent,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  /// 🎉 RESULT / CTA
-                  if (draw.isCompleted)
-                    _resultBanner()
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isOpen
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        TicketSelectPage(draw: draw),
-                                  ),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    /// GOLD OPEN BADGE
+                    if (isOpen)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(40),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFE29F), Color(0xFFFFC371)],
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 6,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFFFFC371).withOpacity(0.6),
+                              blurRadius: 12,
+                            ),
+                          ],
                         ),
                         child: const Text(
-                          "🎟 Buy Tickets",
+                          "OPEN",
                           style: TextStyle(
                             color: Colors.black,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                       ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+                Divider(color: Colors.white.withOpacity(0.1)),
+                const SizedBox(height: 10),
+
+                /// 🎲 TIER CARDS
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _luxuryTier("2D", "x${draw.multiplier2D}", Icons.casino),
+                    _luxuryTier(
+                      "3D",
+                      "x${draw.multiplier3D}",
+                      Icons.confirmation_number,
                     ),
+                    _luxuryTier("4D", "x${draw.multiplier4D}", Icons.diamond),
+                  ],
+                ),
 
-                  const SizedBox(height: 12),
+                const SizedBox(height: 20),
 
-                  /// ⏳ FOOTER
-                  Center(
-                    child: ScaleTransition(
-                      scale: _countdownScale,
-                      child: Text(
-                        draw.isCompleted
-                            ? "🏁 Draw completed"
-                            : isOpen
-                            ? "⏳ Closing in $_countdownText"
-                            : "🕒 Draw time: ${draw.drawTime}",
+                /// 🔥 PREMIUM BUY BUTTON
+                if (!isCompleted)
+                  Container(
+                    height: 56,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF8A3D), Color(0xFFFF5F6D)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF6A00).withOpacity(0.6),
+                          blurRadius: 25,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: isOpen
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => TicketSelectPage(draw: draw),
+                                ),
+                              );
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.local_activity,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        "Buy Tickets",
                         style: TextStyle(
-                          color: isOpen && _countdownPulse.isAnimating
-                              ? Colors.redAccent
-                              : Colors.cyanAccent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
 
-        /// 🔒 LOCK OVERLAY
-        if (isLocked && !draw.isCompleted)
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                child: Container(
-                  color: Colors.black.withOpacity(0.35),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    "🔒 LOCKED",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                const SizedBox(height: 18),
+
+                /// ⏳ COUNTDOWN (LIVE + PULSE LAST 60s)
+                Center(
+                  child: ScaleTransition(
+                    scale: _countdownScale,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.hourglass_bottom_rounded,
+                          size: 16,
+                          color: _countdownPulse.isAnimating
+                              ? Colors.orangeAccent
+                              : Colors.white70,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Closing in $_countdownText",
+                          style: TextStyle(
+                            color: _countdownPulse.isAnimating
+                                ? Colors.orangeAccent
+                                : Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (!isOpen && !isCompleted)
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.35),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(
+                          Icons.lock_rounded,
+                          color: Color(0xFFFFD76A),
+                          size: 40,
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          "LOCKED",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _luxuryTier(String title, String value, IconData icon) {
+    return Container(
+      width: 92,
+      height: 92,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.12),
+            Colors.white.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD76A).withOpacity(0.4),
+            blurRadius: 25,
           ),
-      ],
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: const Color(0xFFFFD76A), size: 26),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _warmTierTile(IconData icon, String title, String value, Color color) {
+    return Container(
+      width: 80,
+      height: 70,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFFFF1E6),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF2A2A2A),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -344,17 +477,6 @@ class _LuckyDrawCardState extends State<LuckyDrawCard>
     );
   }
 
-  Widget _divider() {
-    return Container(
-      height: 1,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.transparent, Colors.white24, Colors.transparent],
-        ),
-      ),
-    );
-  }
-
   Widget _statusBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -370,86 +492,6 @@ class _LuckyDrawCardState extends State<LuckyDrawCard>
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-
-  Widget _slotBox(String icon, String title, String value) {
-    return Container(
-      width: 70,
-      height: 70,
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 18)),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontSize: 11),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _slotBoxNeon({
-    required String icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      width: 76,
-      height: 76,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.35), color.withOpacity(0.15)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: color.withOpacity(0.8)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.6),
-            blurRadius: 14,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -33,7 +33,7 @@ class _OtpScreenState extends State<OtpScreen>
   late Animation<double> shakeAnimation;
 
   // Resend timer
-  int resendSeconds = 30;
+  int resendSeconds = 60;
   Timer? resendTimer;
 
   @override
@@ -160,7 +160,7 @@ class _OtpScreenState extends State<OtpScreen>
       height: 56,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 0, 0, 0),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasError ? Colors.redAccent : const Color(0xFF9D4EDD),
@@ -171,7 +171,7 @@ class _OtpScreenState extends State<OtpScreen>
             color: hasError
                 ? Colors.redAccent.withOpacity(0.6)
                 : const Color(0xFF9D4EDD).withOpacity(0.6),
-            blurRadius: 12,
+            blurRadius: 10,
           ),
         ],
       ),
@@ -241,183 +241,213 @@ class _OtpScreenState extends State<OtpScreen>
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final onPrimary = theme.colorScheme.onPrimary;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          // ================= BACKGROUND GRADIENT =================
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0B0F2A), // deep navy
-                  Color(0xFF1B0F4A), // royal blue
-                  Color(0xFF2E026D), // deep purple
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-
-          // ================= GLOW BLOBS =================
-          Positioned(
-            top: -120,
-            right: -100,
-            child: _glowBlob(260, const Color(0xFF9D4EDD)),
-          ),
-          Positioned(
-            bottom: -140,
-            left: -120,
-            child: _glowBlob(300, const Color(0xFFE040FB)),
-          ),
-
-          // ================= CURVED ABSTRACT SHAPE =================
-          Positioned(
-            top: -200,
-            left: -80,
-            right: -80,
-            child: Container(
-              height: 420,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(300),
-              ),
-            ),
-          ),
-
-          // ================= CONTENT =================
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      layoutBuilder: (currentChild, previousChildren) {
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            ...previousChildren,
-                            if (currentChild != null) currentChild,
-                          ],
-                        );
-                      },
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(
-                              begin: 0.9,
-                              end: 1.0,
-                            ).animate(animation),
-                            child: child,
+      backgroundColor: const Color(0xFFF6F7FB),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: isSuccess
+                  ? Column(
+                      key: const ValueKey('success'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: primary,
+                            boxShadow: [
+                              BoxShadow(
+                                color: primary.withOpacity(0.3),
+                                blurRadius: 25,
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      child: isSuccess
-                          ? Column(
-                              key: const ValueKey('success'),
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 96,
-                                  height: 96,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: const Color(0xFF7B2CFF),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color(0xFF9D4EDD),
-                                        blurRadius: 40,
-                                        spreadRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.check_rounded,
-                                    size: 56,
-                                    color: Colors.white,
+                          child: Icon(
+                            Icons.check_rounded,
+                            size: 56,
+                            color: onPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Verified!",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Logging you in…",
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      key: const ValueKey('otp'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Enter OTP",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "We’ve sent a 6-digit code",
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 40),
+
+                        /// OTP BOXES WITH SHAKE
+                        AnimatedBuilder(
+                          animation: shakeAnimation,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(shakeAnimation.value, 0),
+                              child: child,
+                            );
+                          },
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final totalWidth = constraints.maxWidth;
+                              final boxWidth =
+                                  (totalWidth - 50) / 6; // 50 = total spacing
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: List.generate(
+                                  6,
+                                  (index) => SizedBox(
+                                    width: boxWidth,
+                                    height: 60,
+                                    child: _themedOtpBox(index),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  "Verified!",
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Logging you in…",
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              key: const ValueKey('otp'),
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AnimatedBuilder(
-                                  animation: shakeAnimation,
-                                  builder: (context, child) {
-                                    return Transform.translate(
-                                      offset: Offset(shakeAnimation.value, 0),
-                                      child: child,
-                                    );
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: List.generate(6, otpBox),
-                                  ),
-                                ),
-                                const SizedBox(height: 40),
-                                neonVerifyButton(),
-                                const SizedBox(height: 20),
-                                TextButton(
-                                  onPressed: resendSeconds == 0
-                                      ? resendOtp
-                                      : null,
-                                  child: Text(
-                                    resendSeconds == 0
-                                        ? "RESEND OTP"
-                                        : "Resend in $resendSeconds s",
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        /// VERIFY BUTTON (THEME BASED)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: loading ? null : verifyOtp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent, // force red
+                              foregroundColor: Colors.white, // force white text
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: loading
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: onPrimary,
+                                    ),
+                                  )
+                                : const Text(
+                                    "VERIFY OTP",
                                     style: TextStyle(
-                                      color: resendSeconds == 0
-                                          ? const Color(0xFFE040FB)
-                                          : Colors.white.withOpacity(0.7),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1,
                                     ),
                                   ),
-                                ),
-                              ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        /// RESEND
+                        TextButton(
+                          onPressed: resendSeconds == 0 ? resendOtp : null,
+                          child: Text(
+                            resendSeconds == 0
+                                ? "RESEND OTP"
+                                : "Resend in $resendSeconds s",
+                            style: TextStyle(
+                              color: resendSeconds == 0
+                                  ? primary
+                                  : Colors.black45,
                             ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-}
 
-Widget _glowBlob(double size, Color color) {
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: color.withOpacity(0.25),
-    ),
-  );
+  Widget _themedOtpBox(int index) {
+    return SizedBox(
+      width: 55,
+      height: 60,
+      child: TextField(
+        controller: otpControllers[index],
+        focusNode: focusNodes[index],
+        maxLength: 1,
+        textAlign: TextAlign.center,
+        textAlignVertical: TextAlignVertical.center,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        style: const TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+          height: 1.2, // 🔥 important
+        ),
+        cursorColor: Colors.redAccent,
+        decoration: InputDecoration(
+          counterText: "",
+          filled: true,
+          fillColor: Colors.grey.shade100,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12, // 🔥 gives breathing space
+          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Colors.redAccent, width: 1.8),
+          ),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty && index < 5) {
+            FocusScope.of(context).requestFocus(focusNodes[index + 1]);
+          }
+          if (value.isEmpty && index > 0) {
+            FocusScope.of(context).requestFocus(focusNodes[index - 1]);
+          }
+        },
+      ),
+    );
+  }
 }

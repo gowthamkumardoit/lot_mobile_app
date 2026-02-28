@@ -47,135 +47,102 @@ class _SupportScreenState extends State<SupportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F2A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F2A),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text("Support", style: TextStyle(color: Colors.white)),
-      ),
+      appBar: AppBar(title: const Text("Support")),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 INFO CARD
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon(Icons.support_agent, color: Colors.cyanAccent, size: 26),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Describe your issue below. Our support team will reply via notification.",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        height: 1.4,
+            /// INFO CARD
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.support_agent,
+                      color: theme.colorScheme.primary,
+                      size: 26,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Describe your issue below. Our support team will reply via notification.",
+                        style: theme.textTheme.bodyMedium,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // 📝 LABEL
-            const Text(
+            /// LABEL
+            Text(
               "Your message",
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+              style: theme.textTheme.bodyMedium!.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
 
-            // 📝 TEXT FIELD (FIXED HEIGHT)
+            /// TEXT FIELD
             SizedBox(
               height: 160,
               child: TextField(
                 controller: _controller,
                 maxLines: null,
                 expands: true,
-                onChanged: (_) {
-                  setState(() {}); // 🔥 THIS IS THE FIX
-                },
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
                   hintText:
                       "Example: My withdrawal is still pending from yesterday.",
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Colors.white24),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Colors.white24),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Colors.cyanAccent),
-                  ),
-                  contentPadding: const EdgeInsets.all(14),
                 ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // 🚀 SEND BUTTON (RIGHT BELOW TEXT AREA)
+            /// SEND BUTTON
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.cyanAccent,
-                  foregroundColor: Colors.black,
-                  disabledBackgroundColor: Colors.cyanAccent.withOpacity(0.35),
-                  disabledForegroundColor: Colors.black54,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
                 onPressed: _sending || _controller.text.trim().length < 10
                     ? null
                     : _sendMessage,
                 child: _sending
                     ? const SizedBox(
-                        width: 22,
-                        height: 22,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       )
                     : const Text(
                         "Send Message",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.4,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
               ),
             ),
 
             const Spacer(),
 
-            // 🔔 FOOTER NOTE
-            const Text(
-              "Replies will be sent via push notification.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+            /// FOOTER NOTE
+            Center(
+              child: Text(
+                "Replies will be sent via push notification.",
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  fontSize: 12,
+                  color: Colors.black45,
+                ),
+              ),
             ),
           ],
         ),

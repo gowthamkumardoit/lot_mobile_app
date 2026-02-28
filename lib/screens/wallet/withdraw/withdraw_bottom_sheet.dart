@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/modals/platform_config.dart';
+import 'package:mobile_app/modals/wallet_modal.dart';
 import 'package:mobile_app/modals/withdraw_request.dart';
 import 'package:mobile_app/screens/wallet/bank/bank_account_setup_sheet.dart';
 import 'package:mobile_app/services/user_service.dart';
@@ -36,11 +37,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
   String? _primaryUpi;
   String? _secondaryUpi;
 
-  int _walletBalance = 0;
-  int _lockedBalance = 0;
-  int get _availableBalance =>
-      (_walletBalance - _lockedBalance).clamp(0, _walletBalance);
-
   late final PlatformConfig config;
   late bool _kycApproved;
 
@@ -51,17 +47,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
     _kycApproved = widget.kycApproved;
 
     _loadBankStatus();
-    _loadWalletBalance();
-  }
-
-  Future<void> _loadWalletBalance() async {
-    final data = await WalletService.getWalletBalances();
-    if (!mounted) return;
-
-    setState(() {
-      _walletBalance = data['wallet']!;
-      _lockedBalance = data['locked']!;
-    });
   }
 
   Future<void> _loadBankStatus() async {
@@ -131,7 +116,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
     );
   }
 
-  Future<void> _submitWithdraw() async {
+  Future<void> _submitWithdrawWithBalance(int available) async {
     final raw = _amountCtrl.text.trim();
     final amount = int.tryParse(raw);
 
@@ -167,7 +152,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
       return;
     }
 
-    if (amount > _availableBalance) {
+    if (amount > available) {
       _showError("Insufficient available balance");
       setState(() => _loading = false);
       return;
@@ -263,171 +248,176 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
         MediaQuery.of(context).viewInsets.bottom +
         MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, bottomSafe + 20),
-      decoration: const BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    return StreamBuilder<WalletBalance>(
+      stream: WalletService().getWalletBalances(
+        FirebaseAuth.instance.currentUser!.uid,
       ),
-      child: (_checkingBank)
-          ? const Center(child: CircularProgressIndicator())
-          : config.withdrawalsDisabled
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _Handle(),
-                const SizedBox(height: 20),
-                _infoBox(
-                  icon: Icons.block,
-                  color: danger,
-                  text: "Withdrawals are temporarily disabled",
-                ),
-              ],
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Handle(),
-                const SizedBox(height: 18),
-                const Text(
-                  "Withdraw Funds",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
+      builder: (context, balanceSnap) {
+        final balance =
+            balanceSnap.data ?? WalletBalance(wallet: 0, locked: 0, bonus: 0);
 
-                // 💰 AVAILABLE BALANCE
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        final available = (balance.wallet - balance.locked).clamp(
+          0,
+          balance.wallet,
+        );
+
+        return Container(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, bottomSafe + 20),
+          decoration: const BoxDecoration(
+            color: panel,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: (_checkingBank)
+              ? const Center(child: CircularProgressIndicator())
+              : config.withdrawalsDisabled
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      "Available Balance",
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    _Handle(),
+                    const SizedBox(height: 20),
+                    _infoBox(
+                      icon: Icons.block,
+                      color: danger,
+                      text: "Withdrawals are temporarily disabled",
                     ),
-                    Text(
-                      "₹$_availableBalance",
-                      style: const TextStyle(
+                  ],
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Handle(),
+                    const SizedBox(height: 18),
+                    const Text(
+                      "Withdraw Funds",
+                      style: TextStyle(
                         color: Colors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
+                    const SizedBox(height: 8),
 
-                // 🔒 LOCKED INFO (optional but recommended)
-                if (_lockedBalance > 0) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    "₹$_lockedBalance locked in pending withdrawal",
-                    style: const TextStyle(color: Colors.orange, fontSize: 11),
-                  ),
-                ],
-
-                const SizedBox(height: 14),
-
-                StreamBuilder<WithdrawRequest?>(
-                  stream: WalletService().getPendingWithdrawal(
-                    FirebaseAuth.instance.currentUser!.uid,
-                  ),
-                  builder: (context, snapshot) {
-                    final hasPending =
-                        snapshot.hasData && snapshot.data != null;
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    /// 💰 AVAILABLE BALANCE
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 🔹 BANK / UPI SECTION
-                        _buildBankSection(hasPendingWithdrawal: hasPending),
-
-                        const SizedBox(height: 14),
-
-                        // 🔒 PENDING WITHDRAWAL MESSAGE
-                        if (hasPending)
-                          _infoBox(
-                            icon: Icons.hourglass_top,
-                            color: Colors.orange,
-                            text:
-                                "You already have a withdrawal in progress.\nPlease wait until it is completed.",
+                        const Text(
+                          "Available Balance",
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                        ),
+                        Text(
+                          "₹$available",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                      ],
+                    ),
 
-                        // 💰 WITHDRAW FORM (only if allowed)
-                        if (!hasPending && _bankStatus == "APPROVED") ...[
-                          if (_availableBalance == 0) ...[
-                            const SizedBox(height: 8),
-                            const Text(
-                              "No available balance to withdraw",
-                              style: TextStyle(
+                    if (balance.locked > 0) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "₹${balance.locked} locked in pending withdrawal",
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 14),
+
+                    StreamBuilder<WithdrawRequest?>(
+                      stream: WalletService().getPendingWithdrawal(
+                        FirebaseAuth.instance.currentUser!.uid,
+                      ),
+                      builder: (context, snapshot) {
+                        final hasPending =
+                            snapshot.hasData && snapshot.data != null;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildBankSection(hasPendingWithdrawal: hasPending),
+                            const SizedBox(height: 14),
+
+                            if (hasPending)
+                              _infoBox(
+                                icon: Icons.hourglass_top,
                                 color: Colors.orange,
-                                fontSize: 12,
+                                text:
+                                    "You already have a withdrawal in progress.\nPlease wait until it is completed.",
                               ),
-                            ),
-                          ],
 
-                          const SizedBox(height: 14),
+                            if (!hasPending && _bankStatus == "APPROVED") ...[
+                              if (available == 0) ...[
+                                const SizedBox(height: 8),
+                                const Text(
+                                  "No available balance to withdraw",
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
 
-                          _Input(
-                            controller: _amountCtrl,
-                            hint: "Enter withdraw amount",
-                            prefix: "₹",
-                            keyboardType: TextInputType.number,
-                          ),
+                              const SizedBox(height: 14),
 
-                          const SizedBox(height: 24),
+                              _Input(
+                                controller: _amountCtrl,
+                                hint: "Enter withdraw amount",
+                                prefix: "₹",
+                                keyboardType: TextInputType.number,
+                              ),
 
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: ElevatedButton(
-                              onPressed: (_loading || _availableBalance == 0)
-                                  ? null
-                                  : _submitWithdraw,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: accent,
-                                foregroundColor: bg,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                              const SizedBox(height: 24),
+
+                              SizedBox(
+                                width: double.infinity,
+                                height: 46,
+                                child: ElevatedButton(
+                                  onPressed: (_loading || available == 0)
+                                      ? null
+                                      : () => _submitWithdrawWithBalance(
+                                          available,
+                                        ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: accent,
+                                    foregroundColor: bg,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: _loading
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text(
+                                          "Request Withdrawal",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                 ),
                               ),
-                              child: _loading
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text(
-                                      "Request Withdrawal",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                if (_availableBalance == 0) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    "No available balance to withdraw",
-                    style: TextStyle(color: Colors.orange, fontSize: 12),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-              ],
-            ),
+        );
+      },
     );
   }
 

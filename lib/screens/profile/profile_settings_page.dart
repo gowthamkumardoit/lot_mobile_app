@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
   const ProfileSettingsPage({super.key});
@@ -136,14 +137,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            "Please login again",
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
-      );
+      return const Scaffold(body: Center(child: Text("Please login again")));
     }
 
     final uid = user.uid;
@@ -152,90 +146,190 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       _loaded = true;
       _loadUser(uid);
     }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F2A),
-      appBar: AppBar(
-        title: const Text(
-          "Profile Settings",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          color: Colors.white, // 🔑 THIS IS THE FIX
-          onPressed: () => Navigator.pop(context),
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // Android
+        statusBarBrightness: Brightness.light, // iOS
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// USERNAME
-            const Text("Username", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _usernameCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "choose a username",
-                hintStyle: const TextStyle(color: Colors.white38),
-                errorText: _usernameError,
-                suffixIcon: _checkingUsername
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : _usernameAvailable
-                    ? const Icon(Icons.check, color: Colors.greenAccent)
-                    : null,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF6F7FB),
+        appBar: AppBar(
+          title: const Text(
+            "Profile Settings",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.black87,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Username",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _modernTextField(
+                      controller: _usernameCtrl,
+                      hint: "choose a username",
+                      error: _usernameError,
+                      suffix: _checkingUsername
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _usernameAvailable
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.green,
+                              size: 20,
+                            )
+                          : null,
+                      onChanged: (v) => _checkUsername(v.trim(), uid),
+                    ),
+                  ],
+                ),
               ),
-              onChanged: (v) => _checkUsername(v.trim(), uid),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            /// DISPLAY NAME
-            const Text("Your Name", style: TextStyle(color: Colors.white70)),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _displayNameCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: "Enter your name",
-                hintStyle: TextStyle(color: Colors.white38),
+              _sectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Your Name",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _modernTextField(
+                      controller: _displayNameCtrl,
+                      hint: "Enter your name",
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ),
               ),
-              onChanged: (_) => setState(() {}),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            /// READ ONLY
-            // _readonlyField("Email", user.email ?? "—"),
-            // const SizedBox(height: 16),
-            _readonlyField("Phone", user.phoneNumber ?? "—"),
-            const SizedBox(height: 16),
-            _readonlyField("KYC Status", _kycStatus),
-
-            const SizedBox(height: 28),
-
-            /// SAVE
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed:
-                    (_hasChanges && _usernameAvailable && !_checkingUsername)
-                    ? () => _save(uid)
-                    : null,
-                child: const Text("SAVE CHANGES"),
+              _sectionCard(
+                child: Column(
+                  children: [
+                    _infoRow("Phone", user.phoneNumber ?? "—"),
+                    const Divider(height: 24),
+                    _infoRow(
+                      "KYC Status",
+                      _kycStatus,
+                      valueColor: _kycStatus == "APPROVED"
+                          ? Colors.green
+                          : Colors.orange,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed:
+                      (_hasChanges && _usernameAvailable && !_checkingUsername)
+                      ? () => _save(uid)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    "SAVE CHANGES",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+Widget _sectionCard({required Widget child}) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 15,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: child,
+  );
+}
+
+Widget _modernTextField({
+  required TextEditingController controller,
+  required String hint,
+  String? error,
+  Widget? suffix,
+  ValueChanged<String>? onChanged,
+}) {
+  return TextField(
+    controller: controller,
+    onChanged: onChanged,
+    decoration: InputDecoration(
+      hintText: hint,
+      errorText: error,
+      filled: true,
+      fillColor: const Color(0xFFF1F3F8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      suffixIcon: suffix,
+    ),
+  );
+}
+
+Widget _infoRow(String label, String value, {Color? valueColor}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(label, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: valueColor ?? Colors.black87,
+        ),
+      ),
+    ],
+  );
 }

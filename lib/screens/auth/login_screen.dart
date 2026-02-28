@@ -1,9 +1,9 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/screens/app_shell.dart';
-
 import 'otp_screen.dart';
-import 'dart:ui';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,9 +12,28 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final TextEditingController phoneController = TextEditingController();
   bool loading = false;
+
+  late AnimationController _glowController;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
 
   Future<void> sendOtp() async {
     final phone = phoneController.text.trim();
@@ -31,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: '+91$phone',
       verificationCompleted: (PhoneAuthCredential credential) async {
-        // 🔥 AUTO-READ OTP SUCCESS
         await FirebaseAuth.instance.signInWithCredential(credential);
 
         if (!mounted) return;
@@ -42,7 +60,6 @@ class _LoginScreenState extends State<LoginScreen> {
           (_) => false,
         );
       },
-
       verificationFailed: (FirebaseAuthException e) {
         setState(() => loading = false);
         ScaffoldMessenger.of(
@@ -68,211 +85,177 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          /// 🌌 BACKGROUND GRADIENT
+          /// 🌈 FULL GRADIENT BACKGROUND
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0B0F2A),
-                  Color(0xFF1B0F4A),
-                  Color(0xFF2E026D),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFF8A00), Color(0xFFFF3D57)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
 
-          /// ✨ GLOW BLOBS
-          Positioned(
-            top: -120,
-            right: -100,
-            child: _glowBlob(260, Colors.purpleAccent),
-          ),
-          Positioned(
-            bottom: -140,
-            left: -120,
-            child: _glowBlob(300, Colors.cyanAccent),
-          ),
+          /// 🌌 FLOATING PARTICLES
+          const Positioned.fill(child: _FloatingParticles()),
 
-          /// 📄 CONTENT
-          SafeArea(
+          /// MAIN CONTENT
+          Center(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      20,
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
 
-                      /// 👑 BRAND
-                      Column(
-                        children: [
-                          const Text("👑", style: TextStyle(fontSize: 42)),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Lucky Raja",
-                            style: const TextStyle(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.amberAccent,
-                                  blurRadius: 18,
-                                ),
-                              ],
+                  /// 💎 APP ICON WITH GLOW
+                  AnimatedBuilder(
+                    animation: _glowController,
+                    builder: (_, child) {
+                      return Container(
+                        padding: const EdgeInsets.all(26),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withOpacity(
+                                0.4 + (_glowController.value * 0.4),
+                              ),
+                              blurRadius: 30 + (_glowController.value * 25),
+                              spreadRadius: 5 + (_glowController.value * 10),
                             ),
+                          ],
+                        ),
+                        child: child,
+                      );
+                    },
+                    child: Image.asset(
+                      "assets/icon/app_icon.png",
+                      height: 85,
+                      width: 85,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    "KUBER LOTTERY",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.3,
+                      color: Colors.white,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  const Text(
+                    "Play • Pick • Win Big",
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                  ),
+
+                  const SizedBox(height: 50),
+
+                  /// 🧊 GLASS LOGIN CARD
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Play • Pick • Win Big 🎯",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.85),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              "Login with mobile",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              "Enter your number to receive OTP",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 22),
 
-                      const SizedBox(height: 60),
-
-                      /// 🧊 LOGIN CARD
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(26),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                          child: Container(
-                            padding: const EdgeInsets.all(22),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.92),
-                              borderRadius: BorderRadius.circular(26),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 30,
-                                  offset: Offset(0, 18),
+                            TextField(
+                              controller: phoneController,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                prefixText: "+91 ",
+                                prefixStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
+                                hintText: "Mobile number",
+                                hintStyle: const TextStyle(
+                                  color: Colors.white70,
+                                ),
+                                counterText: "",
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.15),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const Text(
-                                  "Login with mobile",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+
+                            const SizedBox(height: 28),
+
+                            SizedBox(
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: loading ? null : sendOtp,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFFFF3D57),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  "We’ll send an OTP to verify your number",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black.withOpacity(0.6),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                /// 📱 PHONE INPUT
-                                TextField(
-                                  controller: phoneController,
-                                  keyboardType: TextInputType.phone,
-                                  maxLength: 10,
-                                  decoration: InputDecoration(
-                                    prefixIcon: const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                      ),
-                                      child: Text(
-                                        "+91",
+                                child: loading
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      )
+                                    : const Text(
+                                        "CONTINUE",
                                         style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 1,
                                         ),
                                       ),
-                                    ),
-                                    prefixIconConstraints: const BoxConstraints(
-                                      minWidth: 0,
-                                    ),
-                                    hintText: "Mobile number",
-                                    counterText: "",
-                                    filled: true,
-                                    fillColor: const Color(0xFFF2F0F7),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 26),
-
-                                /// 🎯 CTA
-                                SizedBox(
-                                  height: 54,
-                                  child: ElevatedButton(
-                                    onPressed: loading ? null : sendOtp,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF7B2CFF),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      elevation: 8,
-                                      shadowColor: Colors.purpleAccent
-                                          .withOpacity(0.6),
-                                    ),
-                                    child: loading
-                                        ? const CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          )
-                                        : const Text(
-                                            "CONTINUE",
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-
-                      const Spacer(),
-
-                      /// 🔒 FOOTER
-                      Text(
-                        "100% Secure • OTP protected",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.85),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
+                    ),
                   ),
-                ),
+
+                  const SizedBox(height: 30),
+
+                  const Text(
+                    "Secure login with OTP verification",
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
               ),
             ),
           ),
@@ -282,13 +265,67 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-Widget _glowBlob(double size, Color color) {
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: color.withOpacity(0.25),
-    ),
+/// 🌌 Floating Particles
+class _FloatingParticles extends StatefulWidget {
+  const _FloatingParticles();
+
+  @override
+  State<_FloatingParticles> createState() => _FloatingParticlesState();
+}
+
+class _FloatingParticlesState extends State<_FloatingParticles>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  final List<Offset> particles = List.generate(
+    25,
+    (_) => Offset(Random().nextDouble(), Random().nextDouble()),
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) {
+        return CustomPaint(
+          painter: _ParticlePainter(particles, _controller.value),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _ParticlePainter extends CustomPainter {
+  final List<Offset> particles;
+  final double progress;
+
+  _ParticlePainter(this.particles, this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white.withOpacity(0.15);
+
+    for (final p in particles) {
+      final dx = p.dx * size.width;
+      final dy = (p.dy * size.height + progress * 120) % size.height;
+      canvas.drawCircle(Offset(dx, dy), 3, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

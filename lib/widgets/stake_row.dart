@@ -19,70 +19,109 @@ class StakeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glow = stake > 100;
+    final highlight = stake > 100;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: glow ? const Color(0xFF0B2E3A) : Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
         border: Border.all(
-          color: glow ? Colors.cyanAccent : Colors.white24,
-          width: glow ? 1.2 : 1,
+          color: highlight
+              ? const Color(0xFFD4A017) // gold highlight
+              : const Color(0xFFFFE2D2),
         ),
-        boxShadow: glow
-            ? [
-                BoxShadow(
-                  color: Colors.cyanAccent.withOpacity(0.6),
-                  blurRadius: 22,
-                  spreadRadius: 2,
-                ),
-              ]
-            : [],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Text(
-            number,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          /// 🎯 NUMBER
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF1E6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Color(0xFF2A2A2A),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+              ),
             ),
           ),
+
           const Spacer(),
 
-          IconButton(
-            icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-            onPressed: () {
+          /// ➖ DECREMENT
+          _counterButton(
+            icon: Icons.remove,
+            onTap: () {
               HapticFeedback.lightImpact();
               onDecrement();
             },
           ),
 
+          const SizedBox(width: 10),
+
+          /// 💰 STAKE
           Text(
             "₹$stake",
             style: TextStyle(
-              color: glow ? Colors.white : Colors.cyanAccent,
-              fontWeight: FontWeight.bold,
+              color: highlight
+                  ? const Color(0xFFD4A017) // gold if high
+                  : const Color(0xFFFF6A00),
+              fontWeight: FontWeight.w700,
               fontSize: 15,
             ),
           ),
 
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-            onPressed: () {
+          const SizedBox(width: 10),
+
+          /// ➕ INCREMENT
+          _counterButton(
+            icon: Icons.add,
+            onTap: () {
               HapticFeedback.mediumImpact();
               onIncrement();
             },
           ),
 
+          const SizedBox(width: 8),
+
+          /// 🗑 DELETE
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: Color(0xFFE74C3C),
+            ),
             onPressed: onDelete,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _counterButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 32,
+        width: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF6A00).withOpacity(0.12),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18, color: const Color(0xFFFF6A00)),
       ),
     );
   }

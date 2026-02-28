@@ -29,6 +29,7 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
 
   final _aadhaarRegex = RegExp(r'^[0-9]{12}$');
   final _panRegex = RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$');
+  final _dobRegex = RegExp(r'^\d{2}-\d{2}-\d{4}$');
 
   @override
   void dispose() {
@@ -42,6 +43,47 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
   void initState() {
     super.initState();
     _loadKycStatus();
+  }
+
+  bool get _dobValid {
+    final value = _dobCtrl.text.trim();
+
+    // Format check
+    if (!_dobRegex.hasMatch(value)) return false;
+
+    try {
+      final parts = value.split("-");
+      final day = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+
+      final dob = DateTime(year, month, day);
+
+      // Invalid calendar date (like 31-02-2020)
+      if (dob.day != day || dob.month != month || dob.year != year) {
+        return false;
+      }
+
+      final now = DateTime.now();
+
+      // Future date check
+      if (dob.isAfter(now)) return false;
+
+      // Age check (18+)
+      final age =
+          now.year -
+          dob.year -
+          ((now.month < dob.month ||
+                  (now.month == dob.month && now.day < dob.day))
+              ? 1
+              : 0);
+
+      if (age < 18) return false;
+
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _loadKycStatus() async {
@@ -146,37 +188,36 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
   }
 
   Widget _kycForm() {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F2A),
-      appBar: AppBar(
-        title: const Text(
-          "KYC Verification",
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: const BackButton(color: Colors.white),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("KYC Verification")),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _field("Full Name", _nameCtrl),
-            _field("Date of Birth (YYYY-MM-DD)", _dobCtrl),
-
-            const Text(
-              "Document Type",
-              style: TextStyle(color: Colors.white70),
+            Text(
+              "Complete your identity verification",
+              style: theme.textTheme.headlineMedium,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 24),
+
+            _field("Full Name", _nameCtrl),
+            _field(
+              "Date of Birth (DD-MM-YYYY)",
+              _dobCtrl,
+              error: _dobCtrl.text.isEmpty || _dobValid
+                  ? null
+                  : "Enter valid DOB (18+ required)",
+            ),
+
+            Text("Document Type", style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 8),
 
             DropdownButtonFormField<String>(
               value: _docType,
-              dropdownColor: const Color(0xFF151A3A),
-              style: const TextStyle(color: Colors.white),
-              iconEnabledColor: Colors.cyanAccent,
-              decoration: _inputDecoration(),
+              decoration: const InputDecoration(),
               items: const [
                 DropdownMenuItem(value: "AADHAAR", child: Text("Aadhaar Card")),
                 DropdownMenuItem(value: "PAN", child: Text("PAN Card")),
@@ -201,7 +242,7 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
                   : "Invalid ${_docType} number",
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             GestureDetector(
               onTap: _pickImage,
@@ -209,37 +250,42 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
                 height: 140,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.cyanAccent),
-                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.4),
+                  ),
+                  color: Colors.white,
                 ),
                 child: _image == null
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           "Tap to upload document image",
-                          style: TextStyle(color: Colors.white70),
+                          style: theme.textTheme.bodyMedium,
                         ),
                       )
                     : ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
                         child: Image.file(_image!, fit: BoxFit.cover),
                       ),
               ),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: (_submitting || !_docValid || _image == null)
+                onPressed: (_submitting || !_docValid || !_dobValid || _image == null)
                     ? null
                     : _submitKyc,
                 child: _submitting
                     ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Text("SUBMIT KYC"),
               ),
@@ -254,7 +300,7 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
   Widget build(BuildContext context) {
     if (_loadingStatus) {
       return const Scaffold(
-        backgroundColor: Color(0xFF0B0F2A),
+        backgroundColor: Colors.transparent,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -298,15 +344,16 @@ class _KycVerificationPageState extends State<KycVerificationPage> {
   }
 
   Widget _field(String label, TextEditingController ctrl, {String? error}) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 6),
+        Text(label, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 8),
         TextField(
           controller: ctrl,
-          style: const TextStyle(color: Colors.white),
-          decoration: _inputDecoration(errorText: error),
+          decoration: InputDecoration(errorText: error),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 16),
@@ -344,7 +391,7 @@ Widget _statusScreen({
   Widget? action,
 }) {
   return Scaffold(
-    backgroundColor: const Color(0xFF0B0F2A),
+    backgroundColor: Colors.transparent,
     appBar: AppBar(
       title: const Text("KYC Verification"),
       backgroundColor: Colors.transparent,

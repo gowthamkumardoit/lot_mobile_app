@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:mobile_app/screens/app_shell.dart';
 
 import 'package:mobile_app/screens/auth/auth_gate.dart';
 import 'package:mobile_app/screens/maintenance/maintanance_page.dart';
 import 'package:mobile_app/screens/splash/splash_screen.dart';
 import 'package:mobile_app/services/platform_config_service.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:mobile_app/theme/app_theme.dart';
+import 'package:flutter/services.dart';
 
 /// ✅ REQUIRED for navigation from notifications
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -21,6 +22,15 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ SET STATUS BAR STYLE GLOBALLY
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark, // Android
+      statusBarBrightness: Brightness.light, // iOS
+    ),
+  );
 
   await Firebase.initializeApp();
 
@@ -57,8 +67,11 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _loadPlatformConfig() async {
     try {
-      await PlatformConfigService.load().timeout(const Duration(seconds: 5));
-    } catch (e) {
+      await PlatformConfigService.load();
+      print("✅ Platform config loaded successfully");
+    } catch (e, stack) {
+      print("❌ Platform config failed: $e");
+      print(stack);
       _platformConfigFailed = true;
     } finally {
       if (mounted) {
@@ -69,40 +82,44 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // ⏳ Bootstrap splash
-    if (!_configLoaded) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        //home: SplashScreen(),
-        home: MainLayout(),
-      );
-    }
-
-    // 🚧 Platform maintenance / config failure
-    if (_platformConfigFailed) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        //home: MaintenancePage(),
-        home: MainLayout(),
-      );
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    final config = PlatformConfigService.current;
-
     return MaterialApp(
-      navigatorKey: navigatorKey, // ✅ REQUIRED
-      debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       scaffoldMessengerKey: rootScaffoldMessengerKey,
-      title: config.platformName,
+      debugShowCheckedModeBanner: false,
+
+      // ✅ REGISTER YOUR THEME HERE
+      theme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
+
       builder: (context, child) {
+        // ⏳ Still loading config
+        if (!_configLoaded) {
+          return const SplashScreen();
+        }
+
+        // ❌ Failed to load config
+        if (_platformConfigFailed) {
+          return const MaintenancePage();
+        }
+
+        final config = PlatformConfigService.current;
+
+        // 🚧 Maintenance mode
         if (config.maintenanceMode) {
           return const MaintenancePage();
         }
+
         return child!;
       },
-      //home: user == null ? const SplashScreen() : const AuthGate(),
-      home: const MainLayout(),
+
+      // 🏠 Home must also wait for config
+      home: !_configLoaded
+          ? const SplashScreen()
+          : _platformConfigFailed
+          ? const MaintenancePage()
+          : FirebaseAuth.instance.currentUser == null
+          ? const SplashScreen()
+          : const AuthGate(),
     );
   }
 }

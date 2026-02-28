@@ -309,34 +309,28 @@ class WalletService {
         });
   }
 
-  static Future<Map<String, int>> getWalletBalances() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-
-    final snap = await FirebaseFirestore.instance
-        .collection('users')
-        .where('uid', isEqualTo: uid)
-        .limit(1)
-        .get();
-
-    final data = snap.docs.first.data();
-
-    return {
-      'wallet': data['walletBalance'] ?? 0,
-      'locked': data['lockedBalance'] ?? 0,
-    };
-  }
-
-  Stream<WalletBalance> getWalletBalanceStream(String userId) {
+  Stream<WalletBalance> getWalletBalances(String userId) {
     return FirebaseFirestore.instance
         .collection('users')
-        .where('uid', isEqualTo: userId)
-        .limit(1)
+        .doc(userId)
         .snapshots()
-        .map((snap) {
-          final data = snap.docs.first.data();
+        .map((doc) {
+          if (!doc.exists) {
+            return WalletBalance(
+              wallet: 0,
+              locked: 0,
+              bonus: 0,
+              bonusExpiry: null,
+            );
+          }
+
+          final data = doc.data()!;
+
           return WalletBalance(
             wallet: data['walletBalance'] ?? 0,
             locked: data['lockedBalance'] ?? 0,
+            bonus: data['bonusBalance'] ?? 0,
+            bonusExpiry: (data['bonusExpiry'] as Timestamp?)?.toDate(),
           );
         });
   }

@@ -7,7 +7,6 @@ import '../../modals/draw_run.dart';
 import '../../services/ticket_service.dart';
 import 'package:mobile_app/modals/entry_config.dart';
 
-import '../../widgets/entry_header.dart';
 import '../../widgets/number_input_row.dart';
 import '../../widgets/stake_row.dart';
 import 'package:mobile_app/widgets/ticket_confirmation_sheet.dart';
@@ -119,18 +118,10 @@ class _ThreeDEntryPageState extends State<ThreeDEntryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F2),
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0B0F2A), Color(0xFF1B0F4A)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-
+          /// 🎉 Confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(confettiController: _confetti),
@@ -139,64 +130,185 @@ class _ThreeDEntryPageState extends State<ThreeDEntryPage> {
           SafeArea(
             child: Column(
               children: [
-                EntryHeader(
-                  title: "3D Entry",
-                  onBack: () => Navigator.pop(context),
+                /// 🔙 HEADER
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 18,
+                          color: Color(0xFF2A2A2A),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        "3D Entry",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2A2A2A),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
 
-                NumberInputRow(
-                  controller: _numberCtrl,
-                  digits: 3,
-                  onAdd: addNumber,
+                /// 🔢 NUMBER INPUT SECTION
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFFE2D2)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: NumberInputRow(
+                      controller: _numberCtrl,
+                      digits: 3,
+                      onAdd: addNumber,
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
 
+                /// 📋 NUMBERS LIST
                 Expanded(
                   child: numbers.isEmpty
                       ? const Center(
                           child: Text(
-                            "Add numbers",
-                            style: TextStyle(color: Colors.white54),
+                            "Add numbers to continue",
+                            style: TextStyle(
+                              color: Color(0xFF777777),
+                              fontSize: 14,
+                            ),
                           ),
                         )
                       : ListView(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           children: numbers.entries.map((e) {
-                            return StakeRow(
-                              number: e.key,
-                              stake: e.value,
-                              onDecrement: () {
-                                if (numbers[e.key]! > 10) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: StakeRow(
+                                number: e.key,
+                                stake: e.value,
+                                onDecrement: () {
+                                  if (numbers[e.key]! > 10) {
+                                    setState(() {
+                                      numbers[e.key] = numbers[e.key]! - 10;
+                                    });
+                                  }
+                                },
+                                onIncrement: () {
                                   setState(() {
-                                    numbers[e.key] = numbers[e.key]! - 10;
+                                    numbers[e.key] = numbers[e.key]! + 10;
                                   });
-                                }
-                              },
-                              onIncrement: () {
-                                setState(() {
-                                  numbers[e.key] = numbers[e.key]! + 10;
-                                });
-                              },
-                              onDelete: () {
-                                setState(() {
-                                  numbers.remove(e.key);
-                                });
-                              },
+                                },
+                                onDelete: () {
+                                  setState(() {
+                                    numbers.remove(e.key);
+                                  });
+                                },
+                              ),
                             );
                           }).toList(),
                         ),
                 ),
 
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton(
-                    onPressed: numbers.isEmpty || _isSubmitting
-                        ? null
-                        : showConfirmSheet,
-                    child: Text("CONTINUE • ₹$totalStake"),
+                /// 🔘 STICKY TOTAL + BUTTON
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8F2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      /// TOTAL ROW
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Total Stake",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF777777),
+                            ),
+                          ),
+                          Text(
+                            "₹$totalStake",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF6A00),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      /// BUTTON
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: numbers.isEmpty || _isSubmitting
+                              ? null
+                              : showConfirmSheet,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF6A00),
+                            disabledBackgroundColor: Colors.grey.shade300,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 0,
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Continue",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
