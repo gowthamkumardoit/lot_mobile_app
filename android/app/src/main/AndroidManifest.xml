@@ -49,6 +49,11 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="upi"/>
         </intent>
+            <!-- 🔥 REQUIRED FOR TELEGRAM / BROWSER LINKS -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 
 </manifest>

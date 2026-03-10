@@ -247,7 +247,7 @@ class _HistoryPageState extends State<HistoryPage>
 
           // 🔥 Only history (exclude pending)
           final historyTickets = allTickets
-              .where((t) => t.status != 'PENDING')
+              .where((t) => t.status != 'BOOKED')
               .toList();
 
           if (historyTickets.isEmpty) {

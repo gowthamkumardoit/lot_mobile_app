@@ -17,7 +17,7 @@ class TicketReadService {
     return _db
         .collection('tickets')
         .where('userId', isEqualTo: userId)
-        .where('status', isEqualTo: 'PENDING') // ✅ ONLY ACTIVE
+        .where('status', isEqualTo: 'BOOKED') // ✅ ONLY ACTIVE
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map((d) => Ticket.fromDoc(d)).toList());

@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
 import 'bank_accounts_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -177,6 +178,64 @@ class ProfilePage extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 30),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Telegram Channels",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _telegramPill(
+                                  "🇮🇳 Hindi",
+                                  "https://t.me/+V1qW5cepx8BlODVl",
+                                ),
+                                _telegramPill(
+                                  "🇮🇳 Malayalam",
+                                  "https://t.me/+X2mfJ1ixUd0yM2I1",
+                                ),
+                                _telegramPill(
+                                  "🇮🇳 Kannada",
+                                  "https://t.me/+jgnwPq1GV3QxODVl",
+                                ),
+                                _telegramPill(
+                                  "🇮🇳 Tamil",
+                                  "https://t.me/+cCaJxxmXwABhNDhl",
+                                ),
+                                _telegramPill(
+                                  "🇮🇳 Telugu",
+                                  "https://t.me/+8qWdeipcfMM5YTQ1",
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
                       /// 👇 Logout inside same scroll
                       _logoutButton(context),
@@ -529,6 +588,7 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
+
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -548,4 +608,42 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _telegramPill(String label, String url) {
+  return InkWell(
+    onTap: () async {
+      final Uri uri = Uri.parse(url);
+
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint("Telegram launch error: $e");
+      }
+    },
+    borderRadius: BorderRadius.circular(30),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xFFC7D2FE)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.telegram, size: 16, color: Color(0xFF4F46E5)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4F46E5),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
