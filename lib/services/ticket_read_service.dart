@@ -29,6 +29,8 @@ class TicketReadService {
     return firestore
         .collection('kuberGoldTickets')
         .where('userId', isEqualTo: uid)
+        .where('status', isNotEqualTo: 'BOOKED') // ✅ filter
+        .orderBy('status') // 🔴 required when using isNotEqualTo
         .orderBy('createdAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
@@ -36,7 +38,6 @@ class TicketReadService {
               .map((doc) => Ticket.fromDoc(doc))
               .toList();
 
-          // Fetch winning numbers
           final List<Ticket> enrichedTickets = [];
 
           for (final ticket in tickets) {

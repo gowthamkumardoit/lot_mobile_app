@@ -311,15 +311,58 @@ class _KuberXTab extends StatelessWidget {
           return ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 120),
-            itemCount: draws.length,
+            itemCount: draws.length + 1,
             itemBuilder: (context, index) {
-              return LuckyDrawCard(draw: draws[index]);
+              // 👇 Price banner
+              if (index == 0) {
+                return _ticketPriceBanner();
+              }
+
+              final draw = draws[index - 1];
+              return LuckyDrawCard(draw: draw);
             },
           );
         },
       ),
     );
   }
+}
+
+Widget _ticketPriceBanner() {
+  return Container(
+    margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFFFF8A00), Color(0xFFFF5F6D)],
+      ),
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.orange.withOpacity(0.35),
+          blurRadius: 14,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.local_activity, color: Colors.white, size: 20),
+        SizedBox(width: 8),
+        Text(
+          "Ticket price starts from ₹10",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class WalletHeaderWrapper extends StatelessWidget {
