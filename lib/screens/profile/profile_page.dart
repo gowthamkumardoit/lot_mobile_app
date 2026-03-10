@@ -5,6 +5,7 @@ import 'package:mobile_app/screens/profile/profile_settings_page.dart';
 import 'package:mobile_app/screens/support/support_page.dart';
 import 'package:mobile_app/screens/support/telegram_support_page.dart';
 import 'package:mobile_app/widgets/lottery_rules_screen.dart';
+import 'package:mobile_app/widgets/twak_chat_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -135,15 +136,28 @@ class ProfilePage extends StatelessWidget {
                           );
                         },
                       ),
+                      // _optionTile(
+                      //   icon: Icons.support_agent,
+                      //   title: "Customer Support",
+                      //   subtitle: "Send a message & receive replies",
+                      //   onTap: () {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (_) => const SupportScreen(),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
                       _optionTile(
-                        icon: Icons.support_agent,
-                        title: "Customer Support",
-                        subtitle: "Send a message & receive replies",
+                        icon: Icons.chat_bubble_outline,
+                        title: "Live Chat Support",
+                        subtitle: "Instant help from our team",
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const SupportScreen(),
+                              builder: (_) => const TawkChatPage(),
                             ),
                           );
                         },
@@ -284,7 +298,8 @@ class ProfilePage extends StatelessWidget {
         final data = snapshot.data?.data() as Map<String, dynamic>?;
 
         final username = data?['username'] ?? 'Set username';
-        final phone = user.phoneNumber ?? 'No phone number';
+        final phone = user.phoneNumber ?? data?['phone'] ?? 'No phone';
+        final email = user.email ?? data?['email'] ?? 'No email';
         final photoUrl = data?['photoURL'];
 
         return Container(
@@ -305,7 +320,7 @@ class ProfilePage extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // 👤 AVATAR (CLICKABLE)
+              // 👤 AVATAR
               GestureDetector(
                 onTap: () => _updateProfilePhoto(user),
                 child: Stack(
@@ -331,8 +346,6 @@ class ProfilePage extends StatelessWidget {
                             )
                           : null,
                     ),
-
-                    // ✏️ EDIT ICON
                     Positioned(
                       bottom: 0,
                       right: 0,
@@ -356,23 +369,65 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(width: 14),
 
               // USER DETAILS
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    username,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    phone,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
+
+                    const SizedBox(height: 4),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone,
+                          size: 14,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            phone,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 2),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.email,
+                          size: 14,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            email,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

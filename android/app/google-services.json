@@ -14,7 +14,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "782527340670-mirkq77n7h5smvto33no7qt2rac30p6d.apps.googleusercontent.com",
+          "client_id": "782527340670-2unbc5b0ffcmliangmbapl473a4g7580.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luckyraja.app",
+            "certificate_hash": "eb8a94b8f605a2bb237c6a565934667a8b50e162"
+          }
+        },
+        {
+          "client_id": "782527340670-3q7v1mqf0j2jb7j6vqgnbj9ero0i66tq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.luckyraja.app",

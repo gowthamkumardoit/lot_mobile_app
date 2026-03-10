@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/screens/app_shell.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'otp_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,6 +34,43 @@ class _LoginScreenState extends State<LoginScreen>
     _glowController.dispose();
     phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      setState(() => loading = true);
+
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        setState(() => loading = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+        (_) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Google login failed")));
+    } finally {
+      setState(() => loading = false);
+    }
   }
 
   Future<void> sendOtp() async {
@@ -174,6 +212,46 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            const SizedBox(height: 8),
+
+                            SizedBox(
+                              height: 56,
+                              child: ElevatedButton.icon(
+                                onPressed: loading ? null : signInWithGoogle,
+                                icon: Image.asset(
+                                  "assets/icon/google.png",
+                                  height: 22,
+                                ),
+                                label: const Text(
+                                  "CONTINUE WITH GOOGLE",
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            const Row(
+                              children: [
+                                Expanded(child: Divider(color: Colors.white54)),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Text(
+                                    "OR",
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ),
+                                Expanded(child: Divider(color: Colors.white54)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
                             const Text(
                               "Login with mobile",
                               style: TextStyle(
@@ -252,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen>
                   const SizedBox(height: 30),
 
                   const Text(
-                    "Secure login with OTP verification",
+                    "Secure login with OTP & EMAIL verification",
                     style: TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ],
