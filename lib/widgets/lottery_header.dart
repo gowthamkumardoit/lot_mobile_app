@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/app_gradients.dart';
-import '../../screens/wallet/wallet_page.dart';
+
+import '../../screens/app_shell.dart';
 class LotteryHeader extends StatelessWidget {
   final String balance;
   final int notificationCount;
@@ -79,7 +80,7 @@ class LotteryHeader extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => WalletPage()));
+                MainLayout.of(context)?.setTab(3);
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),

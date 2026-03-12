@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import '../modals/draw_run.dart';
 import 'package:mobile_app/modals/entry_config.dart';
-import '../../screens/app_shell.dart';
+import '../../screens/wallet/wallet_page.dart';
 
 class TicketConfirmationSheet extends StatefulWidget {
   final DrawRun draw;
@@ -87,7 +87,10 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
                   Navigator.of(context, rootNavigator: true).pop();
 
                   // 3️⃣ Switch to Wallet tab
-                  MainLayout.of(context)?.setTab(3);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => WalletPage()),
+                  );
                 },
                 child: const Text("ADD MONEY"),
               ),
