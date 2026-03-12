@@ -10,6 +10,7 @@ import 'package:mobile_app/services/platform_config_service.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:mobile_app/theme/app_theme.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app/services/push_notification_service.dart';
 
 /// ✅ REQUIRED for navigation from notifications
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -36,11 +37,17 @@ Future<void> main() async {
 
   // 🔥 THIS WAS REMOVED — ADD IT BACK
   await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug, // use debug first
+    androidProvider: AndroidProvider.playIntegrity, // use debug first
   );
 
   // ✅ ONLY safe thing in main()
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      PushNotificationService.init();
+    }
+  });
 
   runApp(const MyApp());
 }

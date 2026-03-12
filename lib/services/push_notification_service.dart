@@ -50,6 +50,10 @@ class PushNotificationService {
       FirebaseMessaging.instance.onTokenRefresh.listen(
         _saveTokenToFirestoreSafe,
       );
+
+      FirebaseMessaging.instance.getToken().then((token) {
+        print("FCM TOKEN: $token");
+      });
     } catch (e, st) {
       debugPrint('PushNotificationService init failed: $e');
       debugPrint('$st');

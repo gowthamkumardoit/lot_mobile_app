@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_app/modals/wallet_modal.dart';
+import 'package:mobile_app/screens/wallet/wallet_page.dart';
 import 'package:mobile_app/services/wallet_service.dart';
 import '../../modals/digit_draw_slot.dart';
 import 'dart:math';
@@ -120,7 +121,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage>
 
   int get totalCount => selectedTickets.length;
   int get totalAmount => totalCount * widget.slot.ticketPrice;
-
   Future<void> _handlePurchase() async {
     setState(() => _isPurchasing = true);
 
@@ -151,10 +151,15 @@ class _TicketPurchasePageState extends State<TicketPurchasePage>
         _remainingSeconds = 0;
       });
     } on FirebaseFunctionsException catch (e) {
-      // 🔥 Show backend error message
       final message = e.message ?? "Something went wrong";
 
       if (!mounted) return;
+
+      /// 🔥 Detect insufficient balance
+      if (message.toLowerCase().contains("insufficient")) {
+        _showInsufficientBalanceDialog();
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -172,6 +177,33 @@ class _TicketPurchasePageState extends State<TicketPurchasePage>
       if (mounted) {
         setState(() => _isPurchasing = false);
       }
+    }
+  }
+
+  Future<void> _showInsufficientBalanceDialog() async {
+    final goToWallet = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Insufficient Balance"),
+        content: const Text(
+          "Your wallet balance is not enough to purchase tickets.\n\nWould you like to add money to your wallet?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("CANCEL"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("ADD MONEY"),
+          ),
+        ],
+      ),
+    );
+
+    if (goToWallet == true && mounted) {
+      //Navigator.pushNamed(context, "/wallet");
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WalletPage()));
     }
   }
 

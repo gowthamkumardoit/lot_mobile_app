@@ -7,6 +7,7 @@ import 'package:mobile_app/screens/auth/login_screen.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
+  
 
   @override
   Widget build(BuildContext context) {

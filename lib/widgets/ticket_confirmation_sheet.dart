@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 import '../modals/draw_run.dart';
 import 'package:mobile_app/modals/entry_config.dart';
+import '../../screens/app_shell.dart';
 
 class TicketConfirmationSheet extends StatefulWidget {
   final DrawRun draw;
@@ -57,23 +58,39 @@ class _TicketConfirmationSheetState extends State<TicketConfirmationSheet> {
     } catch (e) {
       if (!mounted) return;
 
+      final message = e.toString().replaceAll('Exception: ', '');
+      final isInsufficient = message.toLowerCase().contains("insufficient");
+
       showDialog(
         context: context,
         useRootNavigator: true,
         builder: (ctx) => AlertDialog(
-          title: const Text("Transaction Failed"),
-          content: Text(e.toString().replaceAll('Exception: ', '')),
+          title: Text(
+            isInsufficient ? "Insufficient Balance" : "Transaction Failed",
+          ),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
-                // 1️⃣ Close dialog
-                Navigator.of(ctx).pop();
-
-                // 2️⃣ Close bottom sheet
-                Navigator.of(context, rootNavigator: true).pop();
+                Navigator.of(ctx).pop(); // close dialog
               },
               child: const Text("OK"),
             ),
+
+            if (isInsufficient)
+              TextButton(
+                onPressed: () {
+                  // 1️⃣ Close dialog
+                  Navigator.of(ctx).pop();
+
+                  // 2️⃣ Close bottom sheet (if open)
+                  Navigator.of(context, rootNavigator: true).pop();
+
+                  // 3️⃣ Switch to Wallet tab
+                  MainLayout.of(context)?.setTab(3);
+                },
+                child: const Text("ADD MONEY"),
+              ),
           ],
         ),
       );
