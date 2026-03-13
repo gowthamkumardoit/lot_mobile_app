@@ -46,7 +46,11 @@ class PushNotificationService {
         });
       }
 
-      _saveTokenSafe();
+      FirebaseAuth.instance.authStateChanges().listen((user) {
+        if (user != null) {
+          _saveTokenSafe();
+        }
+      });
       FirebaseMessaging.instance.onTokenRefresh.listen(
         _saveTokenToFirestoreSafe,
       );
@@ -62,10 +66,19 @@ class PushNotificationService {
 
   static Future<void> _saveTokenSafe() async {
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
       final token = await _fcm.getToken();
-      if (token != null) {
-        await _saveTokenToFirestoreSafe(token);
+
+      if (token == null) {
+        debugPrint("❌ FCM token is null");
+        return;
       }
+
+      debugPrint("🔥 Saving FCM token: $token");
+
+      await _saveTokenToFirestoreSafe(token);
     } catch (e) {
       debugPrint('FCM getToken failed: $e');
     }

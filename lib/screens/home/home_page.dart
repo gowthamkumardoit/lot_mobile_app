@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_app/modals/draw_run.dart';
+import 'package:mobile_app/screens/home/app_drawer.dart';
 import 'package:mobile_app/screens/home/lucky_draw_card.dart';
 import 'package:mobile_app/services/draw_run_service.dart';
 import 'package:mobile_app/services/wallet_service.dart';
@@ -14,7 +15,6 @@ import '../../pages/ticket_purchase_page.dart';
 import '../../widgets/promotion_carousel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -55,7 +55,8 @@ class _HomePageState extends State<HomePage> {
         statusBarBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F6FA), // 🔥 light theme bg
+        backgroundColor: const Color(0xFFF5F6FA),
+        drawer: const AppDrawer(), // 🔥 light theme bg
         body: SafeArea(
           child: StreamBuilder<List<DigitDrawSlot>>(
             stream: DigitDrawSlotService().getOpenSlots(),

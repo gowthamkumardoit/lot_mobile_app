@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app/screens/app_shell.dart';
 import 'package:mobile_app/screens/kyc/kyc_verification_page.dart';
 import 'package:mobile_app/screens/profile/profile_settings_page.dart';
+import 'package:mobile_app/screens/support/how_to_play_page.dart';
 import 'package:mobile_app/screens/support/support_page.dart';
 import 'package:mobile_app/screens/support/telegram_support_page.dart';
 import 'package:mobile_app/widgets/lottery_rules_screen.dart';
@@ -172,6 +173,20 @@ class ProfilePage extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const SupportPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      _optionTile(
+                        icon: Icons.help_outline,
+                        title: "How To Play",
+                        subtitle:
+                            "Learn how Kuber Gold and Kuber X lottery works",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HowToPlayPage(),
                             ),
                           );
                         },

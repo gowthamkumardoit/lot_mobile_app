@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_gradients.dart';
 
 import '../../screens/app_shell.dart';
+
 class LotteryHeader extends StatelessWidget {
   final String balance;
   final int notificationCount;
@@ -30,13 +31,21 @@ class LotteryHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           /// 👤 PROFILE IMAGE WITH FALLBACK
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                ? NetworkImage(avatarUrl!)
-                : const AssetImage("assets/images/avatar.png") as ImageProvider,
-            onBackgroundImageError: (_, __) {},
+          Builder(
+            builder: (context) => InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Scaffold.of(context).openDrawer();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.menu, color: Colors.white, size: 24),
+              ),
+            ),
           ),
 
           /// 🎯 CENTER TITLE
